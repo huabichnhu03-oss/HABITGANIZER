@@ -1,0 +1,16 @@
+# Keep Vercel builds lean — skip mobile, extension, and local tooling.
+artifacts/habit-mobile
+artifacts/mockup-sandbox
+extension
+research
+.agents
+.cache
+.config
+.cursor
+attached_assets
+**/*.md
+!Instructions.md
+.env
+.env.*
+!.env.example
+artifacts/habit-mobile/secrets

@@ -1,0 +1,55 @@
+# HabitPup / Habiganize — Netlify frontend deploy
+# Replace YOUR_API_HOST with your Railway hostname (no https://),
+# e.g. habitpup.up.railway.app
+#
+# Site settings (if UI prompts override these):
+#   Base directory:     (leave empty / repo root)
+#   Package directory:  (leave empty / repo root)
+#   Build command:      from [build] below
+#   Publish directory:  from [build] below
+
+[build]
+  command = "pnpm install --frozen-lockfile && pnpm --filter @workspace/habit-tracker run build"
+  publish = "artifacts/habit-tracker/dist/public"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Netlify uses packageManager from root package.json (pnpm)
+
+# Proxy API + legal pages to the Express host (same-origin for the browser).
+[[redirects]]
+  from = "/api/*"
+  to = "https://YOUR_API_HOST/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/privacy"
+  to = "https://YOUR_API_HOST/privacy"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/support"
+  to = "https://YOUR_API_HOST/support"
+  status = 200
+  force = true
+
+# SPA client-side routes (wouter) — must be last.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security / cache headers for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

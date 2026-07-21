@@ -1,0 +1,13 @@
+# Project Context Manager Rule
+
+Whenever I finish a task or before we start a new major feature, please perform these "Context Sync" steps:
+
+1. Update the file `.cursor/rules/progress.md` with the following structure:
+   - **Current Status**: Brief summary of what works.
+   - **Tech Stack**: Key libraries and patterns being used.
+   - **Critical Files**: List of files that hold the core logic.
+   - **Pending Tasks**: What needs to be done next.
+
+2. At the end of your response, if the chat is getting long (over 15 messages), remind me to start a new chat session to save "Context Usage" and maintain AI speed.
+
+3. When I start a NEW chat, your first priority is to read `.cursor/rules/progress.md` to align with the project state.

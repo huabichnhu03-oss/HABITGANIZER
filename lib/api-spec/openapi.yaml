@@ -1,0 +1,2269 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Habit Tracker API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: habits
+    description: Habit management
+  - name: completions
+    description: Habit completion tracking
+  - name: dashboard
+    description: Dashboard and stats
+  - name: rewards
+    description: Coins, shop, and pet collection
+  - name: friends
+    description: Friend codes, requests, and connections
+  - name: leaderboard
+    description: Rankings among friends or globally
+  - name: grocery
+    description: Lightweight shopping list (Postgres rows, no blob storage)
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /habits:
+    get:
+      operationId: listHabits
+      tags: [habits]
+      summary: List habits
+      parameters:
+        - name: archived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, returns only archived habits. When false or omitted, returns only active (non-archived) habits.
+      responses:
+        "200":
+          description: List of habits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Habit"
+    post:
+      operationId: createHabit
+      tags: [habits]
+      summary: Create a new habit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHabitBody"
+      responses:
+        "201":
+          description: Created habit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Habit"
+
+  /habits/{id}:
+    get:
+      operationId: getHabit
+      tags: [habits]
+      summary: Get a single habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Habit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Habit"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateHabit
+      tags: [habits]
+      summary: Update a habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHabitBody"
+      responses:
+        "200":
+          description: Updated habit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Habit"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteHabit
+      tags: [habits]
+      summary: Permanently delete a habit and all its history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /habits/{id}/archive:
+    post:
+      operationId: archiveHabit
+      tags: [habits]
+      summary: Archive a habit (soft hide; keeps history)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Archived habit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Habit"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /habits/{id}/unarchive:
+    post:
+      operationId: unarchiveHabit
+      tags: [habits]
+      summary: Restore an archived habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored habit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Habit"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /habits/{id}/complete:
+    post:
+      operationId: completeHabit
+      tags: [completions]
+      summary: Mark a habit as complete for a date
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteHabitBody"
+      responses:
+        "201":
+          description: Completion recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteHabitResponse"
+    patch:
+      operationId: updateCompletion
+      tags: [completions]
+      summary: Update mood and/or note on an existing completion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCompletionBody"
+      responses:
+        "200":
+          description: Updated completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HabitCompletion"
+        "404":
+          description: Completion not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: uncompleteHabit
+      tags: [completions]
+      summary: Unmark a habit completion for a date
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UncompleteHabitBody"
+      responses:
+        "204":
+          description: Completion removed
+
+  /completions:
+    get:
+      operationId: listCompletionsInRange
+      tags: [completions]
+      summary: List completions in a date range, optionally filtered by habit
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: Inclusive start date (YYYY-MM-DD)
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: Inclusive end date (YYYY-MM-DD)
+        - name: habitId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: If provided, only return completions for this habit
+      responses:
+        "200":
+          description: Completions in range
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HabitCompletion"
+
+  /habits/{id}/completions:
+    get:
+      operationId: getHabitCompletions
+      tags: [completions]
+      summary: Get completion history for a habit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Completion history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HabitCompletion"
+
+  /wallet:
+    get:
+      operationId: getWallet
+      tags: [rewards]
+      summary: Get coin balance
+      responses:
+        "200":
+          description: Wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/watch-ad-coins:
+    post:
+      operationId: watchAdForCoins
+      tags: [rewards]
+      summary: Grant bonus coins after watching a rewarded ad placement
+      description: >
+        Server trusts the client after its ad flow completes. Rate-limited per wallet.
+        Wire a real rewarded-ad SDK on the client and optionally verify server-side later.
+      responses:
+        "200":
+          description: Coins granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchAdCoinsResponse"
+        "400":
+          description: On cooldown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shop:
+    get:
+      operationId: listShop
+      tags: [rewards]
+      summary: List all pets in the shop
+      responses:
+        "200":
+          description: Shop catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopPet"
+
+  /shop/buy/{slug}:
+    post:
+      operationId: buyPet
+      tags: [rewards]
+      summary: Buy a pet
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResponse"
+        "400":
+          description: Not enough coins or already owned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection:
+    get:
+      operationId: getCollection
+      tags: [rewards]
+      summary: List owned pets
+      responses:
+        "200":
+          description: Owned pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnedPet"
+
+  /collection/{id}:
+    get:
+      operationId: getOwnedPet
+      tags: [rewards]
+      summary: Get one owned pet with current decayed meters and mood
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Owned pet detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnedPet"
+        "404":
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/accessory:
+    put:
+      operationId: setPetAccessory
+      tags: [rewards]
+      summary: Equip or remove an accessory on an owned pet (legacy single-slot)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetAccessoryBody"
+      responses:
+        "200":
+          description: Updated owned pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnedPet"
+
+  /collection/{id}/layout:
+    put:
+      operationId: setPetAccessoryLayout
+      tags: [rewards]
+      summary: Replace the placed accessory layout on an owned pet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetAccessoryLayoutBody"
+      responses:
+        "200":
+          description: Updated owned pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnedPet"
+
+  /collection/{id}/name:
+    put:
+      operationId: renamePet
+      tags: [rewards]
+      summary: Rename an owned pet (sets nickname; trimmed, 1..30 chars)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenamePetBody"
+      responses:
+        "200":
+          description: Updated owned pet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnedPet"
+        "400":
+          description: Invalid name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/feed:
+    post:
+      operationId: feedPet
+      tags: [rewards]
+      summary: Spend one food to feed a pet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: No food in inventory or pet already full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/water:
+    post:
+      operationId: waterPet
+      tags: [rewards]
+      summary: Spend one water to water a pet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: No water in inventory or pet already full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/walk:
+    post:
+      operationId: walkPet
+      tags: [rewards]
+      summary: Record a completed walk for a pet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: Walk still on cooldown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/bath:
+    post:
+      operationId: bathPet
+      tags: [rewards]
+      summary: Give a pet a bath
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: Bath still on cooldown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/play:
+    post:
+      operationId: playPet
+      tags: [rewards]
+      summary: Play with a pet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: Play still on cooldown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /foods:
+    get:
+      operationId: listFoods
+      tags: [rewards]
+      summary: List food catalog with owned counts
+      responses:
+        "200":
+          description: Food catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PetFood"
+
+  /foods/buy/{slug}:
+    post:
+      operationId: buyFood
+      tags: [rewards]
+      summary: Buy one unit of a food
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated wallet and inventory count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyFoodResponse"
+        "400":
+          description: Not enough coins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Food not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/feed-with/{foodSlug}:
+    post:
+      operationId: feedPetWith
+      tags: [rewards]
+      summary: Feed a pet with a specific food from inventory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: foodSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: No food in pantry or pet not hungry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /toys:
+    get:
+      operationId: listToys
+      tags: [rewards]
+      summary: List toy catalog with ownership and cooldowns
+      responses:
+        "200":
+          description: Toy catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PetToy"
+
+  /toys/buy/{slug}:
+    post:
+      operationId: buyToy
+      tags: [rewards]
+      summary: Buy a toy
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyToyResponse"
+        "400":
+          description: Not enough coins or already owned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Toy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/play-with/{toySlug}:
+    post:
+      operationId: playPetWith
+      tags: [rewards]
+      summary: Play with a pet using a specific owned toy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: toySlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated pet + wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetCareResponse"
+        "400":
+          description: Toy not owned or on cooldown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}/train:
+    post:
+      operationId: trainPet
+      tags: [rewards]
+      summary: Train a pet to learn a new trick (costs coins)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pet + wallet + leveledUp flag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainResponse"
+        "400":
+          description: On cooldown or not enough coins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /visitor:
+    get:
+      operationId: getVisitor
+      tags: [rewards]
+      summary: Get current visiting playdate pup (if any)
+      responses:
+        "200":
+          description: Visitor or empty cooldown info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Visitor"
+
+  /visitor/play:
+    post:
+      operationId: playWithVisitor
+      tags: [rewards]
+      summary: Play with the current visitor for a coin reward
+      responses:
+        "200":
+          description: Reward and next visitor info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitorPlayResponse"
+        "400":
+          description: No visitor available right now
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /visitor/watch-ad-speedup:
+    post:
+      operationId: watchAdVisitorSpeedup
+      tags: [rewards]
+      summary: Shave time off the playdate visitor cooldown after watching an ad
+      description: >
+        Only applies while waiting for the next visitor (after Play). Rate-limited per wallet.
+      responses:
+        "200":
+          description: Cooldown reduced and latest visitor snapshot returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchAdVisitorSpeedupResponse"
+        "400":
+          description: Nothing to speed up or on cooldown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /health-metrics/summary:
+    get:
+      operationId: getHealthSummary
+      tags: [rewards]
+      summary: Get today's health metrics, 7-day history, goals, and today's entries
+      responses:
+        "200":
+          description: Health summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthSummary"
+
+  /health-metrics/entries:
+    post:
+      operationId: createHealthEntry
+      tags: [rewards]
+      summary: Log a new health metric entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHealthEntryBody"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEntry"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /health-metrics/entries/{id}:
+    put:
+      operationId: updateHealthEntry
+      tags: [rewards]
+      summary: Update a health metric entry's value
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHealthEntryBody"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthEntry"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteHealthEntry
+      tags: [rewards]
+      summary: Delete a health metric entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /health-metrics/goals:
+    put:
+      operationId: updateHealthGoals
+      tags: [rewards]
+      summary: Replace or update one or more health goals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHealthGoalsBody"
+      responses:
+        "200":
+          description: Updated goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HealthGoal"
+
+  /history:
+    get:
+      operationId: getHistory
+      tags: [completions]
+      summary: Get all habit completions for a given month, grouped by habit
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1970
+            maximum: 9999
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        "200":
+          description: Monthly history grouped by habit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryMonth"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /friends/me:
+    get:
+      operationId: getFriendProfile
+      tags: [friends]
+      summary: Get my friend code and display name for sharing
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendProfile"
+    patch:
+      operationId: patchFriendProfile
+      tags: [friends]
+      summary: Update display name shown to friends
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchFriendProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendProfile"
+
+  /friends/requests:
+    post:
+      operationId: sendFriendRequest
+      tags: [friends]
+      summary: Send a friend request by friend code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendFriendRequestBody"
+      responses:
+        "201":
+          description: Request created or friendship formed if the other person had already invited you
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendFriendRequestResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Unknown friend code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already friends or duplicate pending request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listFriendRequests
+      tags: [friends]
+      summary: List incoming and outgoing pending friend requests
+      responses:
+        "200":
+          description: Pending requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequestsSummary"
+
+  /friends/requests/{requestId}/accept:
+    post:
+      operationId: acceptFriendRequest
+      tags: [friends]
+      summary: Accept an incoming friend request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendshipAccepted"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /friends/requests/{requestId}/decline:
+    post:
+      operationId: declineFriendRequest
+      tags: [friends]
+      summary: Decline or hide an incoming friend request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Declined
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /friends/requests/{requestId}:
+    delete:
+      operationId: cancelFriendRequest
+      tags: [friends]
+      summary: Cancel an outgoing friend request you sent
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Cancelled
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /friends:
+    get:
+      operationId: listFriends
+      tags: [friends]
+      summary: List accepted friends
+      responses:
+        "200":
+          description: Friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendSummary"
+
+  /friends/{walletId}:
+    delete:
+      operationId: removeFriend
+      tags: [friends]
+      summary: Remove an accepted friend
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+        "404":
+          description: Not friends with this user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Rank by coins or total habit completions
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [global, friends]
+            default: friends
+        - name: metric
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [coins, completions]
+            default: coins
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Ranked entries (1 = highest score)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+
+  /grocery-items:
+    get:
+      operationId: listGroceryItems
+      tags: [grocery]
+      summary: List grocery items for the signed-in user
+      responses:
+        "200":
+          description: Items in display order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroceryItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createGroceryItem
+      tags: [grocery]
+      summary: Add a grocery item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroceryItemBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroceryItem"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /grocery-items/clear-checked:
+    post:
+      operationId: clearCheckedGroceryItems
+      tags: [grocery]
+      summary: Delete all checked grocery items
+      responses:
+        "204":
+          description: Cleared
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /grocery-items/{id}:
+    patch:
+      operationId: updateGroceryItem
+      tags: [grocery]
+      summary: Update a grocery item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroceryItemBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroceryItem"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteGroceryItem
+      tags: [grocery]
+      summary: Delete a grocery item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    FriendProfile:
+      type: object
+      properties:
+        walletId:
+          type: string
+          description: Same as authenticated user id (Clerk)
+        displayName:
+          type: string
+          description: Shown to friends; optional
+        friendCode:
+          type: string
+          description: Shareable code so others can add you
+      required: [walletId, displayName, friendCode]
+
+    PatchFriendProfileBody:
+      type: object
+      properties:
+        displayName:
+          type: string
+          maxLength: 80
+
+    SendFriendRequestBody:
+      type: object
+      properties:
+        friendCode:
+          type: string
+          description: Other user's friend code (case-insensitive)
+      required: [friendCode]
+
+    SendFriendRequestResult:
+      type: object
+      properties:
+        becameFriends:
+          type: boolean
+          description: True when the other user had already invited you (instant mutual accept)
+        requestId:
+          type: integer
+          nullable: true
+          description: Pending outgoing request id when becameFriends is false
+      required: [becameFriends]
+
+    FriendRequestItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        fromWalletId:
+          type: string
+        toWalletId:
+          type: string
+        fromDisplayName:
+          type: string
+        toDisplayName:
+          type: string
+        fromFriendCode:
+          type: string
+        toFriendCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fromWalletId
+        - toWalletId
+        - fromDisplayName
+        - toDisplayName
+        - fromFriendCode
+        - toFriendCode
+        - createdAt
+
+    FriendRequestsSummary:
+      type: object
+      properties:
+        incoming:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendRequestItem"
+        outgoing:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendRequestItem"
+      required: [incoming, outgoing]
+
+    FriendshipAccepted:
+      type: object
+      properties:
+        friendWalletId:
+          type: string
+      required: [friendWalletId]
+
+    FriendSummary:
+      type: object
+      properties:
+        walletId:
+          type: string
+        displayName:
+          type: string
+        friendCode:
+          type: string
+      required: [walletId, displayName, friendCode]
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+        walletId:
+          type: string
+        displayName:
+          type: string
+        friendCode:
+          type: string
+        score:
+          type: integer
+        isSelf:
+          type: boolean
+      required: [rank, walletId, displayName, friendCode, score, isSelf]
+
+    LeaderboardResponse:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum: [global, friends]
+        metric:
+          type: string
+          enum: [coins, completions]
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+      required: [scope, metric, entries]
+
+    Habit:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+        icon:
+          type: string
+        targetDays:
+          type: array
+          items:
+            type: string
+          description: Days of the week to complete the habit, e.g. ["mon","tue","wed","thu","fri"] or ["all"]
+        reminderEnabled:
+          type: boolean
+          description: Whether reminders are enabled for this habit
+        reminderTimes:
+          type: array
+          items:
+            type: string
+            pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          description: 24h reminder times like "08:00" or "21:30"
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        completedToday:
+          type: boolean
+        todayMood:
+          $ref: "#/components/schemas/HabitMood"
+          nullable: true
+        todayNote:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the habit was archived; null for active habits
+      required:
+        - id
+        - name
+        - color
+        - icon
+        - targetDays
+        - reminderEnabled
+        - reminderTimes
+        - currentStreak
+        - longestStreak
+        - completedToday
+        - createdAt
+
+    CreateHabitBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+        icon:
+          type: string
+        targetDays:
+          type: array
+          items:
+            type: string
+        reminderEnabled:
+          type: boolean
+        reminderTimes:
+          type: array
+          items:
+            type: string
+            pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+      required:
+        - name
+        - color
+        - icon
+        - targetDays
+
+    CompleteHabitResponse:
+      type: object
+      properties:
+        completion:
+          $ref: "#/components/schemas/HabitCompletion"
+        coinsAwarded:
+          type: integer
+          description: Coins awarded for this completion (0 if already completed)
+        foodAwarded:
+          type: integer
+          description: Food units awarded for this completion (0 if already completed)
+        waterAwarded:
+          type: integer
+          description: Water units awarded for this completion (0 if already completed)
+        wallet:
+          $ref: "#/components/schemas/Wallet"
+      required:
+        - completion
+        - coinsAwarded
+        - foodAwarded
+        - waterAwarded
+        - wallet
+
+    Wallet:
+      type: object
+      properties:
+        coins:
+          type: integer
+        food:
+          type: integer
+        water:
+          type: integer
+      required:
+        - coins
+        - food
+        - water
+
+    ShopPet:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        breed:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+        imageUrl:
+          type: string
+        owned:
+          type: boolean
+      required: [slug, name, breed, description, price, imageUrl, owned]
+
+    PetAccessoryPlacement:
+      type: object
+      properties:
+        accessoryId:
+          type: string
+        x:
+          type: number
+          description: Normalized 0..1 horizontal position within the pet artwork box
+        y:
+          type: number
+          description: Normalized 0..1 vertical position within the pet artwork box
+      required: [accessoryId, x, y]
+
+    PetMood:
+      type: string
+      enum: [happy, content, hungry, thirsty, sad]
+      description: Derived mood based on hunger and thirst levels
+
+    OwnedPet:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        breed:
+          type: string
+        imageUrl:
+          type: string
+        nickname:
+          type: string
+          nullable: true
+        accessory:
+          type: string
+          nullable: true
+          description: Legacy single-slot accessory; prefer accessoryLayout
+        accessoryLayout:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetAccessoryPlacement"
+        hunger:
+          type: integer
+          description: 0..100, decays over time
+        thirst:
+          type: integer
+          description: 0..100, decays over time
+        walk:
+          type: integer
+          description: 0..100, decays over time since last walk
+        bath:
+          type: integer
+          description: 0..100, decays over time since last bath
+        play:
+          type: integer
+          description: 0..100, decays over time since last play
+        feedLabel:
+          type: string
+          description: Human-readable status for feeding (e.g. "Full", "Hungry now")
+        walkLabel:
+          type: string
+          description: Human-readable status for walking (e.g. "20 min till next walk", "Walked 2 hours ago")
+        bathLabel:
+          type: string
+          description: Human-readable status for bathing
+        playLabel:
+          type: string
+          description: Human-readable status for playing
+        feedReady:
+          type: boolean
+          description: Whether feed action is currently allowed (off cooldown and useful)
+        walkReady:
+          type: boolean
+        bathReady:
+          type: boolean
+        playReady:
+          type: boolean
+        level:
+          type: integer
+          description: Pet level, floor 1
+        mood:
+          $ref: "#/components/schemas/PetMood"
+        acquiredAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          slug,
+          name,
+          breed,
+          imageUrl,
+          accessoryLayout,
+          hunger,
+          thirst,
+          walk,
+          bath,
+          play,
+          feedLabel,
+          walkLabel,
+          bathLabel,
+          playLabel,
+          feedReady,
+          walkReady,
+          bathReady,
+          playReady,
+          level,
+          mood,
+          acquiredAt,
+        ]
+
+    PurchaseResponse:
+      type: object
+      properties:
+        pet:
+          $ref: "#/components/schemas/OwnedPet"
+        wallet:
+          $ref: "#/components/schemas/Wallet"
+      required: [pet, wallet]
+
+    SetAccessoryBody:
+      type: object
+      properties:
+        accessory:
+          type: string
+          nullable: true
+      required: [accessory]
+
+    RenamePetBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New pet name (1..30 chars after trim)
+      required: [name]
+
+    SetAccessoryLayoutBody:
+      type: object
+      properties:
+        accessoryLayout:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetAccessoryPlacement"
+      required: [accessoryLayout]
+
+    PetCareResponse:
+      type: object
+      properties:
+        pet:
+          $ref: "#/components/schemas/OwnedPet"
+        wallet:
+          $ref: "#/components/schemas/Wallet"
+      required: [pet, wallet]
+
+    PetFood:
+      type: object
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        emoji: { type: string }
+        description: { type: string }
+        price: { type: integer }
+        hungerAmount: { type: integer, description: "Hunger meter restored per serving (0..100)" }
+        bonusLevel: { type: integer, description: "Extra level bumps granted on feed" }
+        owned: { type: integer, description: "Quantity in pantry" }
+      required: [slug, name, emoji, description, price, hungerAmount, bonusLevel, owned]
+
+    BuyFoodResponse:
+      type: object
+      properties:
+        wallet: { $ref: "#/components/schemas/Wallet" }
+        owned: { type: integer, description: "Updated quantity in pantry" }
+      required: [wallet, owned]
+
+    PetToy:
+      type: object
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        emoji: { type: string }
+        description: { type: string }
+        price: { type: integer }
+        happinessGain: { type: integer }
+        cooldownMinutes: { type: integer }
+        owned: { type: boolean }
+        ready: { type: boolean, description: "True when owned and off cooldown" }
+        cooldownLabel: { type: string, description: "Human-readable status (price if not owned, cooldown otherwise)" }
+      required: [slug, name, emoji, description, price, happinessGain, cooldownMinutes, owned, ready, cooldownLabel]
+
+    BuyToyResponse:
+      type: object
+      properties:
+        wallet: { $ref: "#/components/schemas/Wallet" }
+      required: [wallet]
+
+    TrainResponse:
+      type: object
+      properties:
+        pet: { $ref: "#/components/schemas/OwnedPet" }
+        wallet: { $ref: "#/components/schemas/Wallet" }
+        leveledUp: { type: boolean }
+      required: [pet, wallet, leveledUp]
+
+    Visitor:
+      type: object
+      properties:
+        slug: { type: string, nullable: true, description: "Pet slug of visitor or null when none is around" }
+        name: { type: string, nullable: true }
+        breed: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        availableAt:
+          type: string
+          format: date-time
+          description: ISO timestamp of when the next visitor will arrive (or arrived)
+        ready: { type: boolean }
+      required: [availableAt, ready]
+
+    VisitorPlayResponse:
+      type: object
+      properties:
+        coinsAwarded: { type: integer }
+        visitor:
+          type: object
+          properties:
+            slug: { type: string, nullable: true }
+            name: { type: string, nullable: true }
+            breed: { type: string, nullable: true }
+          required: [slug, name, breed]
+        nextAvailableAt: { type: string, format: date-time }
+        wallet: { $ref: "#/components/schemas/Wallet" }
+      required: [coinsAwarded, visitor, nextAvailableAt, wallet]
+
+    WatchAdCoinsResponse:
+      type: object
+      properties:
+        coinsAwarded: { type: integer }
+        wallet: { $ref: "#/components/schemas/Wallet" }
+      required: [coinsAwarded, wallet]
+
+    WatchAdVisitorSpeedupResponse:
+      type: object
+      properties:
+        secondsSkipped: { type: integer, description: "How many seconds were removed from the wait (capped per ad)" }
+        visitor: { $ref: "#/components/schemas/Visitor" }
+        wallet: { $ref: "#/components/schemas/Wallet" }
+      required: [secondsSkipped, visitor, wallet]
+
+    HabitCompletion:
+      type: object
+      properties:
+        id:
+          type: integer
+        habitId:
+          type: integer
+        completedDate:
+          type: string
+          format: date
+        mood:
+          $ref: "#/components/schemas/HabitMood"
+          nullable: true
+        note:
+          type: string
+          nullable: true
+      required:
+        - id
+        - habitId
+        - completedDate
+
+    HabitMood:
+      type: string
+      enum: [great, good, okay, meh, bad]
+      description: Mood emoji captured for a habit completion
+
+    CompleteHabitBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date in YYYY-MM-DD format
+        mood:
+          $ref: "#/components/schemas/HabitMood"
+          nullable: true
+        note:
+          type: string
+          maxLength: 280
+          nullable: true
+      required:
+        - date
+
+    UncompleteHabitBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date in YYYY-MM-DD format
+      required:
+        - date
+
+    UpdateCompletionBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date in YYYY-MM-DD format
+        mood:
+          $ref: "#/components/schemas/HabitMood"
+          nullable: true
+        note:
+          type: string
+          maxLength: 280
+          nullable: true
+      required:
+        - date
+
+    HabitStats:
+      type: object
+      properties:
+        habitId:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        completedToday:
+          type: boolean
+        weeklyCompletions:
+          type: integer
+        totalCompletions:
+          type: integer
+      required:
+        - habitId
+        - name
+        - color
+        - icon
+        - currentStreak
+        - longestStreak
+        - completedToday
+        - weeklyCompletions
+        - totalCompletions
+
+    HealthMetric:
+      type: string
+      enum: [steps, kcal, sleep, standups, heart_rate]
+
+    HealthEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        metric:
+          $ref: "#/components/schemas/HealthMetric"
+        value:
+          type: number
+        entryDate:
+          type: string
+          format: date
+        recordedAt:
+          type: string
+          format: date-time
+      required: [id, metric, value, entryDate, recordedAt]
+
+    HealthGoal:
+      type: object
+      properties:
+        metric:
+          $ref: "#/components/schemas/HealthMetric"
+        goal:
+          type: number
+      required: [metric, goal]
+
+    HealthDailyPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        value:
+          type: number
+          description: Aggregate value for the day (sum for steps/kcal/sleep/standups, latest for heart_rate)
+        count:
+          type: integer
+          description: Number of entries logged that day
+        min:
+          type: number
+          nullable: true
+        max:
+          type: number
+          nullable: true
+        avg:
+          type: number
+          nullable: true
+      required: [date, value, count]
+
+    HealthMetricSummary:
+      type: object
+      properties:
+        metric:
+          $ref: "#/components/schemas/HealthMetric"
+        goal:
+          type: number
+        today:
+          type: number
+          description: Today's aggregate value (sum for cumulative metrics, latest reading for heart rate)
+        todayCount:
+          type: integer
+        todayMin:
+          type: number
+          nullable: true
+        todayMax:
+          type: number
+          nullable: true
+        todayAvg:
+          type: number
+          nullable: true
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/HealthDailyPoint"
+        entries:
+          type: array
+          description: Today's entries, newest first
+          items:
+            $ref: "#/components/schemas/HealthEntry"
+      required: [metric, goal, today, todayCount, history, entries]
+
+    HealthSummary:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/HealthMetricSummary"
+      required: [metrics]
+
+    CreateHealthEntryBody:
+      type: object
+      properties:
+        metric:
+          $ref: "#/components/schemas/HealthMetric"
+        value:
+          type: number
+        entryDate:
+          type: string
+          format: date
+          description: Optional override; defaults to today
+      required: [metric, value]
+
+    UpdateHealthEntryBody:
+      type: object
+      properties:
+        value:
+          type: number
+      required: [value]
+
+    UpdateHealthGoalsBody:
+      type: object
+      properties:
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/HealthGoal"
+      required: [goals]
+
+    HistoryMonthCompletion:
+      type: object
+      properties:
+        completedDate:
+          type: string
+          format: date
+        mood:
+          $ref: "#/components/schemas/HabitMood"
+          nullable: true
+        note:
+          type: string
+          nullable: true
+      required:
+        - completedDate
+
+    HistoryMonthHabit:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+        completions:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryMonthCompletion"
+      required: [id, name, color, icon, completions]
+
+    HistoryMonth:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          description: 1-12
+        earliestCompletionDate:
+          type: string
+          format: date
+          nullable: true
+          description: Date of the earliest completion across all habits, used by clients to limit how far back users can page
+        habits:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryMonthHabit"
+      required: [year, month, habits]
+
+    DashboardStats:
+      type: object
+      properties:
+        todayCompletionRate:
+          type: number
+        totalHabits:
+          type: integer
+        completedToday:
+          type: integer
+        longestActiveStreak:
+          type: integer
+        weeklyCompletionRate:
+          type: number
+        habitStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/HabitStats"
+      required:
+        - todayCompletionRate
+        - totalHabits
+        - completedToday
+        - longestActiveStreak
+        - weeklyCompletionRate
+        - habitStats
+
+    GroceryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          maxLength: 80
+        checked:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - checked
+        - sortOrder
+        - createdAt
+
+    CreateGroceryItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        checked:
+          type: boolean
+          description: Optional; defaults to false. Used when migrating local data.
+      required:
+        - name
+
+    UpdateGroceryItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        checked:
+          type: boolean
+        sortOrder:
+          type: integer

@@ -1,0 +1,34 @@
+# HabitPup / Habiganize — free Render Blueprint
+# Deploy: Dashboard → New → Blueprint → connect this GitHub repo
+# Docs: https://render.com/docs/blueprint-spec
+#
+# After first deploy:
+# 1. Copy the service URL (e.g. https://habiganize.onrender.com)
+# 2. Add it in Clerk → Domains / Allowed origins
+# 3. Confirm GET /api/healthz returns 200
+
+services:
+  - type: web
+    name: habiganize
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: artifacts/api-server
+    buildCommand: cd ../.. && corepack enable && pnpm install --frozen-lockfile && pnpm --filter @workspace/habit-tracker run build && pnpm --filter @workspace/api-server run build
+    startCommand: node --enable-source-maps ./dist/index.mjs
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: SUPPORT_CONTACT_EMAIL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true

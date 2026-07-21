@@ -1,0 +1,109 @@
+uploads = []
+
+[[generated]]
+id = "pWl6MI4tnRa2Uq4qZJc0P"
+uri = "file://artifacts/habit-mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "lnxQ_ueRFRi01g5zI8595"
+uri = "file://attached_assets/pets/shiba.png"
+type = "image"
+title = "shiba doodle"
+
+[[generated]]
+id = "M3gStcMQ7vGBgty6K1qXZ"
+uri = "file://attached_assets/pets/corgi.png"
+type = "image"
+title = "corgi doodle"
+
+[[generated]]
+id = "W7BakfcFdSQUUa3Cp5erD"
+uri = "file://attached_assets/pets/dalmatian.png"
+type = "image"
+title = "dalmatian doodle"
+
+[[generated]]
+id = "CZsEwfeeFUT-2E4lA_W60"
+uri = "file://attached_assets/pets/pomeranian.png"
+type = "image"
+title = "pomeranian doodle"
+
+[[generated]]
+id = "GnTdQNH0T3ihyKp8wOHn0"
+uri = "file://attached_assets/pets/frenchie.png"
+type = "image"
+title = "frenchie doodle"
+
+[[generated]]
+id = "B1gogpwDZYLheWTHSUzgV"
+uri = "file://attached_assets/pets/golden.png"
+type = "image"
+title = "golden doodle"
+
+[[generated]]
+id = "txW2GMkoo-ThAIx8LPNEs"
+uri = "file://attached_assets/pets_pixel/shiba.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "bdUPDAWMCNtR75ipXa-UJ"
+uri = "file://attached_assets/pets_pixel/corgi.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "2IceRp-54EHllFIujOFI2"
+uri = "file://attached_assets/pets_pixel/frenchie.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "au9VvpuHHv_isTBHUKR3q"
+uri = "file://attached_assets/pets_pixel/dalmatian.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "bAzG8Gxj0d0vfbql4vSDU"
+uri = "file://attached_assets/pets_pixel/pomeranian.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YhAptvnShEoFrUUTPv16m"
+uri = "file://attached_assets/pets_pixel/golden.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EybM6ZQW333hWr1jusUnD"
+uri = "file://artifacts/habit-mobile/assets/images/adaptive-icon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "ihlLyO2dIukkZnf-ov_gS"
+uri = "file://artifacts/habit-mobile/assets/images/splash.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "22Z7Lj6opWwvOgkHtjqQ4"
+uri = "file://attached_assets/generated_images/habiganize_pup_cover.png"
+type = "image"
+title = "generated_image"
+
+[[outputs]]
+id = "nfbQQ2bwW6Y4wyUE4FQh3"
+uri = "file://research/habit-app-architecture.md"
+type = "text"
+title = "How Habit-Tracker Apps Work — Research Report"
+
+[[outputs]]
+id = "GTwhXy4Ldn38lJgtudaka"
+uri = "file://attached_assets/generated_images/habiganize_pup_cover.png"
+type = "image"
+title = "HABIGANIZE - PUP — Hackathon Cover (1920x1080, 16:9)"
