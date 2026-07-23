@@ -205,8 +205,6 @@ Skip Vercel/Netlify for now — they only host the frontend and still need a fre
 **Tradeoff:** After ~15 minutes with no traffic, Render sleeps. The next visit can take
 ~30–60 seconds to wake up. Fine for personal / demo use; not ideal for a busy product.
 
-Config file: root `render.yaml` (Blueprint).
-
 ---
 
 ### FREE path — Neon + Render (do this)
@@ -218,7 +216,7 @@ You need a GitHub repo (private is fine). From the project root:
 ```bash
 git init
 git add .
-git commit -m "chore: prepare free Render deploy"
+git commit -m "chore: initial commit"
 # Create an empty repo on GitHub named habiganize (or habitpup), then:
 git remote add origin https://github.com/YOUR_USERNAME/habiganize.git
 git branch -M main
@@ -247,28 +245,9 @@ DATABASE_URL="paste-your-neon-url-here" pnpm --filter @workspace/db run push
 
 #### Step 3 — Deploy on Render (API + website together)
 
-**Blueprint (easiest)**
-
-1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **Blueprint**.
+1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**.
 2. Connect the GitHub repo you pushed in Step 0.
-3. Render reads `render.yaml`. Set these env vars when prompted (do not skip):
-
-| Variable | Value |
-|---|---|
-| `DATABASE_URL` | Neon connection string from Step 1 |
-| `CLERK_PUBLISHABLE_KEY` | `pk_live_…` |
-| `CLERK_SECRET_KEY` | `sk_live_…` |
-| `SUPPORT_CONTACT_EMAIL` | Your email for `/support` |
-
-4. Deploy. You get a URL like `https://habiganize.onrender.com`.
-5. Wait for the first build (~5–10 min). Then open:
-   - `https://habiganize.onrender.com/api/healthz` → should be OK
-   - `https://habiganize.onrender.com/` → the web app
-
-**Manual Web Service** (if Blueprint fails)
-
-1. **New** → **Web Service** → connect the same GitHub repo.
-2. Settings:
+3. Settings:
 
 | Setting | Value |
 |---|---|
@@ -278,14 +257,21 @@ DATABASE_URL="paste-your-neon-url-here" pnpm --filter @workspace/db run push
 | Build Command | `cd ../.. && corepack enable && pnpm install --frozen-lockfile && pnpm --filter @workspace/habit-tracker run build && pnpm --filter @workspace/api-server run build` |
 | Start Command | `node --enable-source-maps ./dist/index.mjs` |
 
-3. Environment variables (same table as Blueprint above), plus:
+4. Environment variables:
 
 | Variable | Value |
 |---|---|
+| `DATABASE_URL` | Neon connection string from Step 1 |
+| `CLERK_PUBLISHABLE_KEY` | `pk_live_…` |
+| `CLERK_SECRET_KEY` | `sk_live_…` |
+| `SUPPORT_CONTACT_EMAIL` | Your email for `/support` |
 | `NODE_ENV` | `production` |
 | `PORT` | `10000` |
 
-4. Deploy and test `/api/healthz` as above.
+5. Deploy. You get a URL like `https://habiganize.onrender.com`.
+6. Wait for the first build (~5–10 min). Then open:
+   - `https://habiganize.onrender.com/api/healthz` → should be OK
+   - `https://habiganize.onrender.com/` → the web app
 
 #### Step 4 — Finish Clerk
 
@@ -300,19 +286,6 @@ When you build the Expo app, set EAS secrets to your **Render** URL (not Railway
 eas secret:create --scope project --name EXPO_PUBLIC_API_URL --value https://YOUR-APP.onrender.com
 eas secret:create --scope project --name EXPO_PUBLIC_WEB_ORIGIN --value https://YOUR-APP.onrender.com
 ```
-
----
-
-### Optional later — prettier frontend URL (still free)
-
-If you want `*.netlify.app` or `*.vercel.app` **in addition to** Render:
-
-1. Keep Render as the API (required).
-2. In `netlify.toml` or `vercel.json`, replace `YOUR_API_HOST` with
-   `YOUR-APP.onrender.com` (no `https://`).
-3. Deploy the frontend on Netlify/Vercel with `VITE_CLERK_PUBLISHABLE_KEY` and `BASE_PATH=/`.
-
-You do **not** need this for a working free app. Render already serves the website.
 
 ---
 
@@ -509,17 +482,6 @@ EAS auto-increments build numbers. You only manage the human-readable version in
 | `PORT` | `10000` (Render sets this; keep matching) |
 | `SUPPORT_CONTACT_EMAIL` | Email shown on `/support` |
 
-### Web Frontend (Vercel or Netlify — Option B / C)
-
-| Variable | Description |
-|---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk live publishable key |
-| `BASE_PATH` | `/` |
-| `VITE_GAM_REWARDED_AD_UNIT` | Optional GAM rewarded ad unit path |
-
-Also set `YOUR_API_HOST` inside `vercel.json` or `netlify.toml` to your Render hostname
-(e.g. `habiganize.onrender.com`) if you split frontend hosting.
-
 ### Mobile App (EAS Secrets)
 
 | Variable | Description |
@@ -580,10 +542,6 @@ Resolve these tracked issues before publishing:
 
 | File | Purpose |
 |---|---|
-| `vercel.json` | Optional Vercel frontend (proxy to Render/Railway) |
-| `netlify.toml` | Optional Netlify frontend (proxy to Render/Railway) |
-| `render.yaml` | **Free** Render Blueprint — API + web on one URL |
-| `.vercelignore` | Files skipped during Vercel upload |
 | `artifacts/habit-tracker/vite.config.ts` | Vite build config — base path, output dir, Replit plugin guard |
 | `artifacts/habit-tracker/src/App.tsx` | React app entry — Clerk provider, routing |
 | `artifacts/api-server/src/index.ts` | Express entry — serves static files + API in production |
