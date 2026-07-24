@@ -1,16 +1,19 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, SignIn, SignUp, Show, useAuth, useClerk } from "@clerk/react";
-import { setAuthTokenGetter, setExtraHeadersGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl, setExtraHeadersGetter } from "@workspace/api-client-react";
 import { habitCalendarRequestHeaders } from "@workspace/habit-dates";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { HabitReminderListener } from "@/components/habit-reminder-listener";
+import { ServerWakeScreen } from "@/components/server-wake-screen";
+import { useServerReady } from "@/hooks/use-server-ready";
 import { createClerkAppearance } from "@/lib/clerk-appearance";
 import { initializeRewardedAdsWeb } from "@/lib/rewarded-ad-web";
+import { I18nProvider, useTranslation } from "@/i18n";
 
 // Resolve publishable key from hostname so the same build can serve multiple
 // Clerk custom domains. Falls back to VITE_CLERK_PUBLISHABLE_KEY.
@@ -21,6 +24,13 @@ const clerkPubKey = publishableKeyFromHost(
 
 // In prod this is automatically injected; in dev it is empty.
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+// Production (Netlify) talks to Render directly when VITE_API_URL is set.
+// Locally, leave unset so Vite proxies relative `/api` to the API server.
+const apiBaseUrl = import.meta.env.VITE_API_URL?.trim();
+if (apiBaseUrl) {
+  setBaseUrl(apiBaseUrl.replace(/\/+$/, ""));
+}
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -67,16 +77,17 @@ function PageFallback() {
 }
 
 function LegalFooterLinks() {
+  const { t } = useTranslation();
   return (
     <p className="mt-8 text-center text-xs text-muted-foreground font-medium">
       <a className="font-bold text-foreground underline" href={`${basePath}/privacy`}>
-        Privacy
+        {t("common.privacy")}
       </a>
       <span className="mx-2" aria-hidden>
         ·
       </span>
       <a className="font-bold text-foreground underline" href={`${basePath}/support`}>
-        Support
+        {t("common.support")}
       </a>
     </p>
   );
@@ -103,6 +114,7 @@ function SignUpPage() {
 // Landing page shown to unauthenticated visitors at the root path.
 function WelcomePage() {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-background to-accent px-4">
       <div
@@ -116,7 +128,7 @@ function WelcomePage() {
           </span>
           <div>
             <h1 className="font-black text-2xl text-white tracking-tight">HABIGANIZE</h1>
-            <p className="text-white/80 text-sm font-medium">Build habits that stick</p>
+            <p className="text-white/80 text-sm font-medium">{t("welcome.tagline")}</p>
           </div>
         </div>
         <div className="p-6 flex flex-col gap-3">
@@ -124,16 +136,16 @@ function WelcomePage() {
             onClick={() => setLocation("/sign-up")}
             className="w-full rounded-xl border-3 border-border bg-primary py-3 font-black uppercase tracking-wider text-white shadow-[3px_3px_0_hsl(var(--foreground))] active:translate-y-px active:shadow-none transition-all"
           >
-            Get Started
+            {t("welcome.getStarted")}
           </button>
           <button
             onClick={() => setLocation("/sign-in")}
             className="w-full rounded-xl border-3 border-border bg-secondary py-3 font-black uppercase tracking-wider text-foreground shadow-[3px_3px_0_hsl(var(--foreground))] active:translate-y-px active:shadow-none transition-all"
           >
-            Log In
+            {t("welcome.logIn")}
           </button>
           <p className="text-center text-xs text-muted-foreground font-medium pt-1">
-            Your data is saved to your account across all devices.
+            {t("welcome.dataNote")}
           </p>
           <LegalFooterLinks />
         </div>
@@ -181,33 +193,115 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-function AppRoutes() {
+function ClerkBootFallback() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-background px-4">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-foreground border-t-transparent" />
+      <p className="text-sm font-medium text-muted-foreground">{t("auth.loading")}</p>
+    </div>
+  );
+}
+
+function ClerkBootTimeout() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-4 text-center">
+      <h1 className="text-xl font-black tracking-tight">{t("auth.failedTitle")}</h1>
+      <p className="max-w-md text-sm text-muted-foreground font-medium">
+        {t("auth.failedBody")}
+      </p>
+      <button
+        type="button"
+        className="rounded-xl border-3 border-border bg-primary px-5 py-2 font-black uppercase tracking-wider text-white"
+        onClick={() => window.location.reload()}
+      >
+        {t("common.retry")}
+      </button>
+    </div>
+  );
+}
+
+/** Original signed-in shell; dog wake panel only while the API is cold. */
+function SignedInApp() {
+  const { ready, showWakeScreen } = useServerReady(true);
+
+  if (!ready) {
+    return (
+      <Layout>
+        {showWakeScreen ? (
+          <ServerWakeScreen />
+        ) : (
+          <div className="flex h-[60vh] items-center justify-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-foreground border-t-transparent" />
+          </div>
+        )}
+      </Layout>
+    );
+  }
+
+  // Same tree as before — do not alter normal page UI.
   return (
     <>
-      {/* Signed-in: full app */}
+      <HabitReminderListener />
+      <Layout>
+        <Suspense fallback={<PageFallback />}>
+          <Switch>
+            <Route path="/" component={TodayPage} />
+            <Route path="/habits" component={HabitsPage} />
+            <Route path="/stats" component={StatsPage} />
+            <Route path="/history" component={HistoryPage} />
+            <Route path="/pups" component={PupsPage} />
+            <Route path="/health" component={HealthPage} />
+            <Route path="/friends" component={FriendsPage} />
+            <Route path="/leaderboard" component={LeaderboardPage} />
+            <Route path="/premium" component={PremiumPage} />
+            <Route path="/sign-in/*?" component={() => <Redirect to="/" />} />
+            <Route path="/sign-up/*?" component={() => <Redirect to="/" />} />
+            <Route component={NotFound} />
+          </Switch>
+        </Suspense>
+      </Layout>
+    </>
+  );
+}
+
+function AppRoutes() {
+  const { isLoaded } = useAuth();
+  const [location] = useLocation();
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded) {
+      setTimedOut(false);
+      return;
+    }
+    const id = window.setTimeout(() => setTimedOut(true), 12_000);
+    return () => window.clearTimeout(id);
+  }, [isLoaded]);
+
+  // Preview only — does not affect normal routes.
+  if (location === "/preview/wake") {
+    if (!isLoaded) {
+      return timedOut ? <ClerkBootTimeout /> : <ClerkBootFallback />;
+    }
+    return (
+      <Layout>
+        <ServerWakeScreen />
+      </Layout>
+    );
+  }
+
+  if (!isLoaded) {
+    return timedOut ? <ClerkBootTimeout /> : <ClerkBootFallback />;
+  }
+
+  return (
+    <>
       <Show when="signed-in">
-        <HabitReminderListener />
-        <Layout>
-          <Suspense fallback={<PageFallback />}>
-            <Switch>
-              <Route path="/" component={TodayPage} />
-              <Route path="/habits" component={HabitsPage} />
-              <Route path="/stats" component={StatsPage} />
-              <Route path="/history" component={HistoryPage} />
-              <Route path="/pups" component={PupsPage} />
-              <Route path="/health" component={HealthPage} />
-              <Route path="/friends" component={FriendsPage} />
-              <Route path="/leaderboard" component={LeaderboardPage} />
-              <Route path="/premium" component={PremiumPage} />
-              <Route path="/sign-in/*?" component={() => <Redirect to="/" />} />
-              <Route path="/sign-up/*?" component={() => <Redirect to="/" />} />
-              <Route component={NotFound} />
-            </Switch>
-          </Suspense>
-        </Layout>
+        <SignedInApp />
       </Show>
 
-      {/* Signed-out: landing + auth pages */}
       <Show when="signed-out">
         <Suspense fallback={<PageFallback />}>
           <Switch>
@@ -255,9 +349,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <I18nProvider>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </I18nProvider>
   );
 }
 

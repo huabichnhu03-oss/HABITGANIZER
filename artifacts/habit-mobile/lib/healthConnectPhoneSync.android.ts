@@ -141,7 +141,7 @@ export async function syncHealthFromPhone(args: {
     return {
       ok: true,
       updated: next,
-      message: `Updated from phone: ${labels.join(", ")}. (Stand-ups still manual — not in Health Connect.)`,
+      message: `Updated from phone: ${labels.join(", ")}. (Stand-ups still manual, not in Health Connect.)`,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

@@ -9,12 +9,10 @@ import {
   exclusivePetsTable,
   achievementsTable,
   userAchievementsTable,
-  walletsTable,
   petsTable,
   userPetsTable,
 } from "@workspace/db";
-import { eq, and, sql, asc, desc, gte, lte, isNull, or } from "drizzle-orm";
-import { sendZodError } from "../lib/errors";
+import { eq, and, asc, desc, gte, lte, isNull, or } from "drizzle-orm";
 
 const router = Router();
 
@@ -116,160 +114,28 @@ router.get("/subscription", async (req, res) => {
   }
 });
 
-// Subscribe to a plan (simulated - in production, integrate with Stripe)
-router.post("/subscribe", financialRateLimit, async (req, res) => {
-  const walletId = req.walletId;
-  const { planSlug, billingCycle = "monthly" } = req.body;
-
-  if (!planSlug) {
-    res.status(400).json({ error: "Plan slug is required" });
-    return;
-  }
-
-  if (!["monthly", "yearly"].includes(billingCycle)) {
-    res.status(400).json({ error: "Billing cycle must be 'monthly' or 'yearly'" });
-    return;
-  }
-
-  try {
-    const [plan] = await db
-      .select()
-      .from(subscriptionPlansTable)
-      .where(eq(subscriptionPlansTable.slug, planSlug));
-
-    if (!plan) {
-      res.status(404).json({ error: "Plan not found" });
-      return;
-    }
-
-    // Check for existing active subscription
-    const [existingSub] = await db
-      .select()
-      .from(userSubscriptionsTable)
-      .where(
-        and(
-          eq(userSubscriptionsTable.walletId, walletId),
-          eq(userSubscriptionsTable.status, "active")
-        )
-      );
-
-    if (existingSub) {
-      res.status(400).json({ error: "You already have an active subscription. Cancel first to change plans." });
-      return;
-    }
-
-    const now = new Date();
-    const periodEnd = new Date(now);
-    if (billingCycle === "monthly") {
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
-    } else {
-      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-    }
-
-    // In production, this would create a Stripe subscription
-    // For now, simulate the subscription creation
-    const [subscription] = await db
-      .insert(userSubscriptionsTable)
-      .values({
-        walletId,
-        planSlug,
-        status: "active",
-        billingCycle,
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        cancelAtPeriodEnd: false,
-        // stripeSubscriptionId: would come from Stripe
-        // stripeCustomerId: would come from Stripe
-      })
-      .returning();
-
-    res.status(201).json({
-      id: subscription.id,
-      plan: planSlug,
-      planName: plan.name,
-      status: "active",
-      billingCycle,
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
-      features: {
-        maxHabits: plan.maxHabits,
-        maxPets: plan.maxPets,
-        exclusivePets: plan.exclusivePets,
-        adFree: plan.adFree,
-        prioritySupport: plan.prioritySupport,
-        advancedAnalytics: plan.advancedAnalytics,
-      },
-    });
-  } catch (err) {
-    req.log.error({ err }, "Failed to create subscription");
-    res.status(500).json({ error: "Internal server error" });
-  }
+// Subscribe is handled by Clerk Billing (<PricingTable />). Keep endpoint as a clear error.
+router.post("/subscribe", financialRateLimit, async (_req, res) => {
+  res.status(410).json({
+    error:
+      "Subscriptions are managed by Clerk Billing. Use the pricing table on /premium to subscribe.",
+    code: "use_clerk_billing",
+  });
 });
 
-// Cancel subscription (at period end)
-router.post("/subscription/cancel", async (req, res) => {
-  const walletId = req.walletId;
-  try {
-    const [sub] = await db
-      .select()
-      .from(userSubscriptionsTable)
-      .where(
-        and(
-          eq(userSubscriptionsTable.walletId, walletId),
-          eq(userSubscriptionsTable.status, "active")
-        )
-      );
-
-    if (!sub) {
-      res.status(404).json({ error: "No active subscription found" });
-      return;
-    }
-
-    await db
-      .update(userSubscriptionsTable)
-      .set({ cancelAtPeriodEnd: true, updatedAt: new Date() })
-      .where(eq(userSubscriptionsTable.id, sub.id));
-
-    res.json({
-      message: "Subscription will be cancelled at the end of the current billing period",
-      currentPeriodEnd: sub.currentPeriodEnd,
-    });
-  } catch (err) {
-    req.log.error({ err }, "Failed to cancel subscription");
-    res.status(500).json({ error: "Internal server error" });
-  }
+// Cancel / reactivate are managed in Clerk UserProfile / Billing UI.
+router.post("/subscription/cancel", async (_req, res) => {
+  res.status(410).json({
+    error: "Manage your subscription in Account → Billing (Clerk).",
+    code: "use_clerk_billing",
+  });
 });
 
-// Reactivate cancelled subscription
-router.post("/subscription/reactivate", async (req, res) => {
-  const walletId = req.walletId;
-  try {
-    const [sub] = await db
-      .select()
-      .from(userSubscriptionsTable)
-      .where(
-        and(
-          eq(userSubscriptionsTable.walletId, walletId),
-          eq(userSubscriptionsTable.status, "active"),
-          eq(userSubscriptionsTable.cancelAtPeriodEnd, true)
-        )
-      );
-
-    if (!sub) {
-      res.status(404).json({ error: "No cancellable subscription found" });
-      return;
-    }
-
-    await db
-      .update(userSubscriptionsTable)
-      .set({ cancelAtPeriodEnd: false, updatedAt: new Date() })
-      .where(eq(userSubscriptionsTable.id, sub.id));
-
-    res.json({ message: "Subscription reactivated successfully" });
-  } catch (err) {
-    req.log.error({ err }, "Failed to reactivate subscription");
-    res.status(500).json({ error: "Internal server error" });
-  }
+router.post("/subscription/reactivate", async (_req, res) => {
+  res.status(410).json({
+    error: "Manage your subscription in Account → Billing (Clerk).",
+    code: "use_clerk_billing",
+  });
 });
 
 // ============================================================
@@ -302,10 +168,10 @@ router.get("/coin-packs", async (req, res) => {
   }
 });
 
-// Purchase coins (simulated - in production, integrate with Stripe)
-router.post("/coin-packs/buy/:slug", financialRateLimit, async (req, res) => {
+// Start Stripe Checkout for a coin pack (fulfillment via /api/webhooks/stripe).
+router.post("/coin-packs/checkout/:slug", financialRateLimit, async (req, res) => {
   const walletId = req.walletId;
-  const { slug } = req.params;
+  const slug = typeof req.params.slug === "string" ? req.params.slug : req.params.slug?.[0];
 
   if (!slug) {
     res.status(400).json({ error: "Pack slug is required" });
@@ -313,6 +179,10 @@ router.post("/coin-packs/buy/:slug", financialRateLimit, async (req, res) => {
   }
 
   try {
+    const { requireStripe, resolveAppOrigin } = await import("../lib/stripe");
+    const stripe = requireStripe();
+    const origin = resolveAppOrigin(req);
+
     const [pack] = await db
       .select()
       .from(coinPacksTable)
@@ -324,57 +194,51 @@ router.post("/coin-packs/buy/:slug", financialRateLimit, async (req, res) => {
     }
 
     const totalCoins = pack.coins + pack.bonusCoins;
-
-    // In production, this would process payment via Stripe
-    // For now, simulate the purchase
-    const result = await db.transaction(async (tx) => {
-      // Award coins to wallet
-      await tx
-        .insert(walletsTable)
-        .values({ id: walletId, coins: totalCoins })
-        .onConflictDoUpdate({
-          target: walletsTable.id,
-          set: {
-            coins: sql`${walletsTable.coins} + ${totalCoins}`,
-            updatedAt: new Date(),
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: pack.price,
+            product_data: {
+              name: pack.name,
+              description: `${totalCoins.toLocaleString()} coins. ${pack.description}`,
+            },
           },
-        });
-
-      // Record purchase
-      const [purchase] = await tx
-        .insert(coinPurchasesTable)
-        .values({
-          walletId,
-          packSlug: slug,
-          coinsAwarded: totalCoins,
-          amountPaid: pack.price,
-          status: "completed",
-          // stripePaymentIntentId: would come from Stripe
-        })
-        .returning();
-
-      // Get updated wallet
-      const [wallet] = await tx
-        .select()
-        .from(walletsTable)
-        .where(eq(walletsTable.id, walletId));
-
-      return { purchase, wallet };
-    });
-
-    res.status(201).json({
-      coinsAwarded: totalCoins,
-      bonusCoins: pack.bonusCoins,
-      wallet: {
-        coins: result.wallet?.coins ?? 0,
-        food: result.wallet?.food ?? 0,
-        water: result.wallet?.water ?? 0,
+        },
+      ],
+      success_url: `${origin}/premium?coins=1`,
+      cancel_url: `${origin}/premium?coins=cancelled`,
+      client_reference_id: walletId,
+      metadata: {
+        kind: "coin_pack",
+        walletId,
+        packSlug: slug,
       },
     });
+
+    res.json({ url: session.url, sessionId: session.id });
   } catch (err) {
-    req.log.error({ err }, "Failed to purchase coin pack");
-    res.status(500).json({ error: "Internal server error" });
+    const status = (err as { status?: number }).status ?? 500;
+    req.log.error({ err }, "Failed to create coin pack checkout");
+    res.status(status).json({
+      error:
+        status === 503
+          ? "Coin purchases are temporarily unavailable (Stripe not configured)"
+          : "Failed to start coin checkout",
+    });
   }
+});
+
+/** @deprecated Use POST /coin-packs/checkout/:slug */
+router.post("/coin-packs/buy/:slug", financialRateLimit, async (req, res) => {
+  res.status(410).json({
+    error: "Use Stripe Checkout via POST /coin-packs/checkout/:slug",
+    code: "use_stripe_checkout",
+  });
 });
 
 // Get purchase history

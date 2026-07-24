@@ -24,8 +24,11 @@ import {
   getListFriendsQueryKey,
 } from "@workspace/api-client-react";
 import { CoinBadge } from "@/components/coin-badge";
+import { FeedbackPrompt } from "@/components/feedback-prompt";
 import { NewUserWelcome } from "@/components/new-user-welcome";
+import { FeedbackDialogProvider } from "@/contexts/feedback-dialog-context";
 import { ProfileAccountProvider, useProfileAccount } from "@/contexts/profile-dialog-context";
+import { useTranslation } from "@/i18n";
 
 type Prefetcher = (qc: ReturnType<typeof useQueryClient>) => void;
 
@@ -90,30 +93,32 @@ const ROUTE_PREFETCH: Record<string, { chunk: () => Promise<unknown>; data: Pref
 };
 
 const NAV_ITEMS = [
-  { href: "/", label: "Today", icon: Home },
-  { href: "/habits", label: "Habits", icon: List },
-  { href: "/stats", label: "Stats", icon: BarChart2 },
-  { href: "/history", label: "History", icon: HistoryIcon },
-  { href: "/health", label: "Health", icon: Heart },
-  { href: "/pups", label: "Pups", icon: PawPrint },
-  { href: "/friends", label: "Friends", icon: Users },
-  { href: "/leaderboard", label: "Ranks", icon: Trophy },
-  { href: "/premium", label: "Premium", icon: Crown },
+  { href: "/", labelKey: "nav.today", testId: "today", icon: Home },
+  { href: "/habits", labelKey: "nav.habits", testId: "habits", icon: List },
+  { href: "/stats", labelKey: "nav.stats", testId: "stats", icon: BarChart2 },
+  { href: "/history", labelKey: "nav.history", testId: "history", icon: HistoryIcon },
+  { href: "/health", labelKey: "nav.health", testId: "health", icon: Heart },
+  { href: "/pups", labelKey: "nav.pups", testId: "pups", icon: PawPrint },
+  { href: "/friends", labelKey: "nav.friends", testId: "friends", icon: Users },
+  { href: "/leaderboard", labelKey: "nav.ranks", testId: "ranks", icon: Trophy },
+  { href: "/premium", labelKey: "nav.premium", testId: "premium", icon: Crown },
 ] as const;
 
 const MOBILE_NAV_ITEMS = [
-  { href: "/", label: "Today", icon: Home },
-  { href: "/habits", label: "Habits", icon: List },
-  { href: "/stats", label: "Stats", icon: BarChart2 },
-  { href: "/health", label: "Health", icon: Heart },
-  { href: "/pups", label: "Pups", icon: PawPrint },
+  { href: "/", labelKey: "nav.today", testId: "today", icon: Home },
+  { href: "/habits", labelKey: "nav.habits", testId: "habits", icon: List },
+  { href: "/stats", labelKey: "nav.stats", testId: "stats", icon: BarChart2 },
+  { href: "/health", labelKey: "nav.health", testId: "health", icon: Heart },
+  { href: "/pups", labelKey: "nav.pups", testId: "pups", icon: PawPrint },
 ] as const;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <ProfileAccountProvider>
-      <LayoutShell>{children}</LayoutShell>
-    </ProfileAccountProvider>
+    <FeedbackDialogProvider>
+      <ProfileAccountProvider>
+        <LayoutShell>{children}</LayoutShell>
+      </ProfileAccountProvider>
+    </FeedbackDialogProvider>
   );
 }
 
@@ -122,6 +127,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const { signOut } = useClerk();
   const { openProfile } = useProfileAccount();
+  const { t } = useTranslation();
 
   const prefetch = useCallback(
     (href: string) => {
@@ -136,6 +142,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background overflow-x-hidden md:h-svh md:max-h-svh md:overflow-hidden">
       <NewUserWelcome />
+      <FeedbackPrompt />
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between gap-2 p-3 border-b-[3px] border-border bg-accent">
         <div className="flex items-center gap-1.5 text-foreground font-black shrink-0">
@@ -148,7 +155,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => openProfile()}
             data-testid="open-profile-mobile"
-            aria-label="Settings"
+            aria-label={t("common.settings")}
             className="p-2 rounded-xl border-brutal-sm bg-white hover:bg-muted active:translate-y-0.5 transition-all"
           >
             <UserRound className="w-4 h-4" strokeWidth={2.5} />
@@ -171,12 +178,13 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
             className="mt-3 w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl border-brutal-sm bg-white font-bold text-sm uppercase tracking-wide hover:shadow-brutal-sm hover:bg-muted transition-all"
           >
             <UserRound className="w-5 h-5" strokeWidth={2.5} />
-            <span className="tracking-wide">Settings</span>
+            <span className="tracking-wide">{t("common.settings")}</span>
           </button>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
+            const label = t(item.labelKey);
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             return (
               <Link
@@ -188,7 +196,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
                 onTouchStart={() => prefetch(item.href)}
               >
                 <div
-                  data-testid={`nav-${item.label.toLowerCase()}`}
+                  data-testid={`nav-${item.testId}`}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all cursor-pointer border-brutal-sm font-bold text-base ${
                     isActive
                       ? "bg-primary text-white shadow-brutal-sm translate-x-1"
@@ -196,7 +204,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <Icon className="w-6 h-6" strokeWidth={3} />
-                  <span className="uppercase tracking-wide">{item.label}</span>
+                  <span className="uppercase tracking-wide">{label}</span>
                 </div>
               </Link>
             );
@@ -209,7 +217,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
             data-testid="sign-out"
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-brutal-sm bg-white font-black uppercase tracking-wide text-sm hover:bg-muted hover:shadow-brutal-sm transition-all"
           >
-            <LogOut className="w-4 h-4" /> Sign out
+            <LogOut className="w-4 h-4" /> {t("common.signOut")}
           </button>
         </div>
       </aside>
@@ -225,6 +233,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
       <nav className="md:hidden fixed bottom-0 w-full bg-card border-t-[3px] border-border flex justify-around p-3 pb-safe z-50 shadow-[0_-4px_0_0_hsl(var(--foreground))]">
         {MOBILE_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
+          const label = t(item.labelKey);
           const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
           return (
             <Link
@@ -235,13 +244,13 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
               onTouchStart={() => prefetch(item.href)}
             >
               <div
-                data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+                data-testid={`mobile-nav-${item.testId}`}
                 className={`flex flex-col items-center gap-1 p-2 px-3 rounded-xl transition-colors cursor-pointer border-2 border-transparent ${
                   isActive ? "bg-primary border-border text-white shadow-[2px_2px_0_0_hsl(var(--foreground))]" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="w-6 h-6" strokeWidth={isActive ? 3 : 2} />
-                <span className="text-[10px] font-black uppercase tracking-wider">{item.label}</span>
+                <span className="text-[10px] font-black uppercase tracking-wider">{label}</span>
               </div>
             </Link>
           );

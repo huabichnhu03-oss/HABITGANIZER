@@ -235,7 +235,7 @@ export function GroceryList() {
             <p className="text-xs font-bold text-muted-foreground text-center py-3">Loading…</p>
           ) : ordered.length === 0 ? (
             <p className="text-xs font-bold text-muted-foreground text-center py-3">
-              Stick to your list — add items before you shop.
+              Stick to your list. Add items before you shop.
             </p>
           ) : (
             <ul className="space-y-1">

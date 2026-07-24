@@ -91,7 +91,7 @@ export async function scheduleHabitReminders(habit: Habit): Promise<void> {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: `Reminder: ${habit.name}`,
-            body: `It's ${time} — time to ${habit.name.toLowerCase()}.`,
+            body: `It's ${time}. Time to ${habit.name.toLowerCase()}.`,
             data: { tag, habitId: habit.id, time, route: "today" },
           },
           trigger: {

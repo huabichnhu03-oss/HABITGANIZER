@@ -6,5 +6,5 @@ export {
   extractApiErrorMessage,
   formatPetCareErrorMessage,
 } from "./collection-cache";
-export { setBaseUrl, setAuthTokenGetter, setExtraHeadersGetter } from "./custom-fetch";
+export { setBaseUrl, setAuthTokenGetter, setExtraHeadersGetter, customFetch } from "./custom-fetch";
 export type { AuthTokenGetter } from "./custom-fetch";

@@ -1,13 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
-import { Crown, Zap, Star, Shield, BarChart3, Heart, Check, X, Sparkles, Gift } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  PricingTable,
+  UserProfile,
+  useAuth,
+  Show,
+  SignInButton,
+} from "@clerk/react";
+import {
+  Crown,
+  Zap,
+  Star,
+  Shield,
+  BarChart3,
+  Heart,
+  Check,
+  Sparkles,
+  Gift,
+  HandHeart,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { customFetch, extractApiErrorMessage } from "@workspace/api-client-react";
+import { createClerkAppearance } from "@/lib/clerk-appearance";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SubscriptionPlan {
   slug: string;
@@ -51,85 +79,125 @@ interface UserSubscription {
   };
 }
 
+interface DonationPresetResponse {
+  currency: string;
+  amounts: Array<{ cents: number; label: string }>;
+  minCents: number;
+  maxCents: number;
+}
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const clerkAppearance = createClerkAppearance(basePath || "/");
+
+const DEFAULT_DONATION_AMOUNTS = [
+  { cents: 300, label: "$3" },
+  { cents: 500, label: "$5" },
+  { cents: 1000, label: "$10" },
+  { cents: 2500, label: "$25" },
+];
+
+async function apiGet<T>(path: string): Promise<T> {
+  return customFetch<T>(path, { method: "GET" });
+}
+
+async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  return customFetch<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
 export default function PremiumPage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { has, isLoaded } = useAuth();
+  const [manageOpen, setManageOpen] = useState(false);
+  const [donateAmount, setDonateAmount] = useState(500);
+  const [donateMessage, setDonateMessage] = useState("");
+  const [customAmount, setCustomAmount] = useState("");
 
-  // Fetch subscription plans
-  const { data: plans = [] } = useQuery<SubscriptionPlan[]>({
+  const clerkPremium =
+    isLoaded &&
+    Boolean(
+      has?.({ plan: "pro" }) ||
+        has?.({ plan: "premium" }) ||
+        has?.({ plan: "ultimate" }),
+    );
+
+  const { data: plans = [] } = useQuery({
     queryKey: ["/api/plans"],
+    queryFn: () => apiGet<SubscriptionPlan[]>("/api/plans"),
   });
 
-  // Fetch coin packs
-  const { data: coinPacks = [] } = useQuery<CoinPack[]>({
+  const { data: coinPacks = [] } = useQuery({
     queryKey: ["/api/coin-packs"],
+    queryFn: () => apiGet<CoinPack[]>("/api/coin-packs"),
   });
 
-  // Fetch current subscription
-  const { data: subscription } = useQuery<UserSubscription>({
+  const { data: subscription } = useQuery({
     queryKey: ["/api/subscription"],
+    queryFn: () => apiGet<UserSubscription>("/api/subscription"),
   });
 
-  // Subscribe mutation
-  const subscribeMutation = useMutation({
-    mutationFn: async ({ planSlug, cycle }: { planSlug: string; cycle: string }) => {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planSlug, billingCycle: cycle }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to subscribe");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription"] });
-      toast({
-        title: "Welcome to Premium! 🎉",
-        description: "Your subscription is now active. Enjoy all the perks!",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Subscription failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+  const { data: donationPresets } = useQuery({
+    queryKey: ["/api/donations/presets"],
+    queryFn: () => apiGet<DonationPresetResponse>("/api/donations/presets"),
   });
 
-  // Buy coins mutation
   const buyCoinsMutation = useMutation({
-    mutationFn: async (packSlug: string) => {
-      const res = await fetch(`/api/coin-packs/buy/${packSlug}`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to purchase coins");
-      }
-      return res.json();
-    },
+    mutationFn: async (packSlug: string) =>
+      apiPost<{ url: string }>(`/api/coin-packs/checkout/${packSlug}`),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/wallet"] });
-      toast({
-        title: "Coins purchased! ✨",
-        description: `${data.coinsAwarded} coins added to your wallet!`,
-      });
+      if (data.url) window.location.assign(data.url);
     },
     onError: (error: Error) => {
       toast({
         title: "Purchase failed",
-        description: error.message,
+        description: extractApiErrorMessage(error, error.message),
         variant: "destructive",
       });
     },
   });
 
-  const isPremium = subscription?.plan !== "free" && subscription?.status === "active";
+  const donateMutation = useMutation({
+    mutationFn: async () =>
+      apiPost<{ url: string }>("/api/donations/checkout", {
+        amountCents: donateAmount,
+        message: donateMessage.trim() || undefined,
+      }),
+    onSuccess: (data) => {
+      if (data.url) window.location.assign(data.url);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Donation failed",
+        description: extractApiErrorMessage(error, error.message),
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("donated") === "1") {
+      toast({
+        title: "Thank you! 💛",
+        description: "Your donation helps keep Habiganize growing.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/donations/mine"] });
+    }
+    if (params.get("coins") === "1") {
+      toast({
+        title: "Coins on the way!",
+        description: "Payment received. Your wallet will update in a moment.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/wallet"] });
+    }
+  }, [toast, queryClient]);
+
+  const isPremium =
+    clerkPremium || (subscription?.plan !== "free" && subscription?.status === "active");
 
   const planIcons: Record<string, React.ReactNode> = {
     free: <Heart className="h-6 w-6" />,
@@ -139,235 +207,145 @@ export default function PremiumPage() {
   };
 
   const planColors: Record<string, string> = {
-    free: "from-gray-500 to-gray-600",
-    pro: "from-blue-500 to-purple-600",
-    premium: "from-purple-500 to-pink-600",
+    free: "from-stone-500 to-stone-600",
+    pro: "from-sky-500 to-cyan-600",
+    premium: "from-rose-500 to-pink-600",
     ultimate: "from-amber-500 to-orange-600",
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-black mb-4 tracking-tight text-foreground">
           Supercharge Your Habits
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Unlock premium features, exclusive pets, and unlimited habit tracking
+          Unlock premium features, exclusive pets, and support Habiganize
         </p>
       </motion.div>
 
       <Tabs defaultValue="plans" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
           <TabsTrigger value="plans" className="gap-2">
-            <Crown className="h-4 w-4" /> Subscription Plans
+            <Crown className="h-4 w-4" /> Plans
           </TabsTrigger>
           <TabsTrigger value="coins" className="gap-2">
-            <Gift className="h-4 w-4" /> Buy Coins
+            <Gift className="h-4 w-4" /> Coins
+          </TabsTrigger>
+          <TabsTrigger value="donate" className="gap-2">
+            <HandHeart className="h-4 w-4" /> Donate
           </TabsTrigger>
         </TabsList>
 
-        {/* Subscription Plans Tab */}
-        <TabsContent value="plans">
-          {/* Billing Toggle */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-2 p-1 bg-muted rounded-lg">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={cn(
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                  billingCycle === "monthly"
-                    ? "bg-background shadow-sm"
-                    : "text-muted-foreground"
-                )}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("yearly")}
-                className={cn(
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                  billingCycle === "yearly"
-                    ? "bg-background shadow-sm"
-                    : "text-muted-foreground"
-                )}
-              >
-                Yearly
-                <Badge variant="secondary" className="ml-2">
-                  Save 20%
-                </Badge>
-              </button>
+        <TabsContent value="plans" className="space-y-8">
+          <Show when="signed-out">
+            <Card>
+              <CardContent className="p-8 text-center space-y-4">
+                <p className="text-muted-foreground">Sign in to subscribe to a plan.</p>
+                <SignInButton mode="modal">
+                  <Button>Sign in</Button>
+                </SignInButton>
+              </CardContent>
+            </Card>
+          </Show>
+
+          <Show when="signed-in">
+            <div className="rounded-2xl border-4 border-foreground bg-card p-4 md:p-6 shadow-[6px_6px_0_hsl(var(--foreground))]">
+              <PricingTable
+                for="user"
+                appearance={clerkAppearance}
+                newSubscriptionRedirectUrl={`${basePath}/premium`}
+              />
             </div>
-          </div>
+          </Show>
 
-          {/* Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {plans.map((plan, index) => (
-              <motion.div
-                key={plan.slug}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card
-                  className={cn(
-                    "relative overflow-hidden h-full",
-                    plan.slug === "premium" && "border-purple-500 shadow-lg shadow-purple-500/20",
-                    subscription?.plan === plan.slug && "border-green-500"
-                  )}
-                >
-                  {plan.slug === "premium" && (
-                    <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500 to-pink-500 text-white px-3 py-1 text-xs font-medium rounded-bl-lg">
-                      Most Popular
-                    </div>
-                  )}
-                  {subscription?.plan === plan.slug && (
-                    <div className="absolute top-0 right-0 bg-green-500 text-white px-3 py-1 text-xs font-medium rounded-bl-lg">
-                      Current Plan
-                    </div>
-                  )}
-
-                  <CardHeader>
-                    <div
+          {plans.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-center">What each tier unlocks in Habiganize</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {plans.map((plan, index) => (
+                  <motion.div
+                    key={plan.slug}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card
                       className={cn(
-                        "w-12 h-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-white mb-4",
-                        planColors[plan.slug]
+                        "h-full border-2",
+                        subscription?.plan === plan.slug && "border-green-600",
                       )}
                     >
-                      {planIcons[plan.slug]}
-                    </div>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-6">
-                    {/* Price */}
-                    <div>
-                      <div className="text-3xl font-bold">
-                        ${billingCycle === "monthly"
-                          ? (plan.priceMonthly / 100).toFixed(2)
-                          : (plan.priceYearly / 100).toFixed(2)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        per {billingCycle === "monthly" ? "month" : "year"}
-                      </div>
-                      {billingCycle === "yearly" && plan.priceMonthly > 0 && (
-                        <div className="text-sm text-green-600 mt-1">
-                          Save ${((plan.priceMonthly * 12 - plan.priceYearly) / 100).toFixed(2)}/year
+                      <CardHeader className="pb-3">
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center text-white mb-2",
+                            planColors[plan.slug],
+                          )}
+                        >
+                          {planIcons[plan.slug]}
                         </div>
-                      )}
-                    </div>
+                        <CardTitle className="text-base">{plan.name}</CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-green-600" />
+                            {plan.maxHabits === -1 ? "Unlimited" : plan.maxHabits} habits
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-green-600" />
+                            {plan.maxPets === -1 ? "Unlimited" : plan.maxPets} pets
+                          </li>
+                          {plan.exclusivePets && (
+                            <li className="flex items-center gap-2">
+                              <Star className="h-4 w-4 text-amber-500" /> Exclusive pets
+                            </li>
+                          )}
+                          {plan.adFree && (
+                            <li className="flex items-center gap-2">
+                              <Shield className="h-4 w-4 text-sky-500" /> Ad-free
+                            </li>
+                          )}
+                          {plan.advancedAnalytics && (
+                            <li className="flex items-center gap-2">
+                              <BarChart3 className="h-4 w-4 text-rose-500" /> Analytics
+                            </li>
+                          )}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
 
-                    {/* Features */}
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span>
-                          {plan.maxHabits === -1 ? "Unlimited" : plan.maxHabits} habits
-                        </span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span>
-                          {plan.maxPets === -1 ? "Unlimited" : plan.maxPets} pets
-                        </span>
-                      </li>
-                      {plan.exclusivePets && (
-                        <li className="flex items-center gap-2 text-sm">
-                          <Star className="h-4 w-4 text-yellow-500" />
-                          <span>Exclusive pets</span>
-                        </li>
-                      )}
-                      {plan.adFree && (
-                        <li className="flex items-center gap-2 text-sm">
-                          <Shield className="h-4 w-4 text-blue-500" />
-                          <span>Ad-free experience</span>
-                        </li>
-                      )}
-                      {plan.advancedAnalytics && (
-                        <li className="flex items-center gap-2 text-sm">
-                          <BarChart3 className="h-4 w-4 text-purple-500" />
-                          <span>Advanced analytics</span>
-                        </li>
-                      )}
-                      {plan.prioritySupport && (
-                        <li className="flex items-center gap-2 text-sm">
-                          <Zap className="h-4 w-4 text-orange-500" />
-                          <span>Priority support</span>
-                        </li>
-                      )}
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* CTA Button */}
-                    <Button
-                      className="w-full"
-                      variant={plan.slug === "premium" ? "default" : "outline"}
-                      disabled={
-                        subscription?.plan === plan.slug ||
-                        subscribeMutation.isPending
-                      }
-                      onClick={() =>
-                        subscribeMutation.mutate({
-                          planSlug: plan.slug,
-                          cycle: billingCycle,
-                        })
-                      }
-                    >
-                      {subscription?.plan === plan.slug
-                        ? "Current Plan"
-                        : subscribeMutation.isPending
-                        ? "Processing..."
-                        : plan.slug === "free"
-                        ? "Free Forever"
-                        : "Subscribe Now"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Current Subscription Info */}
           {isPremium && subscription && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8"
-            >
-              <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Your Premium Subscription</h3>
-                      <p className="text-muted-foreground">
-                        {subscription.billingCycle === "yearly" ? "Annual" : "Monthly"} plan •
-                        Renews{" "}
-                        {subscription.currentPeriodEnd
-                          ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage Subscription
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card className="bg-gradient-to-r from-rose-500/10 to-amber-500/10 border-2 border-foreground">
+              <CardContent className="p-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Your plan: {subscription.plan}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {subscription.billingCycle === "yearly" ? "Annual" : "Monthly"}
+                    {subscription.currentPeriodEnd
+                      ? ` · Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
+                      : ""}
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setManageOpen(true)}>
+                  Manage subscription
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
-        {/* Coin Packs Tab */}
         <TabsContent value="coins">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {coinPacks.map((pack, index) => (
@@ -379,97 +357,143 @@ export default function PremiumPage() {
               >
                 <Card
                   className={cn(
-                    "relative overflow-hidden h-full",
-                    pack.popular && "border-amber-500 shadow-lg shadow-amber-500/20"
+                    "relative overflow-hidden h-full border-2",
+                    pack.popular && "border-amber-500 shadow-[4px_4px_0_#f59e0b]",
                   )}
                 >
                   {pack.popular && (
-                    <div className="absolute top-0 right-0 bg-gradient-to-l from-amber-500 to-orange-500 text-white px-3 py-1 text-xs font-medium rounded-bl-lg">
-                      Best Value
-                    </div>
+                    <Badge className="absolute top-2 right-2 bg-amber-500">Best value</Badge>
                   )}
-
-                  <CardContent className="p-6 text-center">
-                    <div className="text-4xl mb-4">{pack.emoji}</div>
-                    <h3 className="font-semibold text-lg mb-2">{pack.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{pack.description}</p>
-
-                    <div className="space-y-2 mb-6">
-                      <div className="text-3xl font-bold text-amber-600">
-                        {pack.coins.toLocaleString()}
-                      </div>
-                      {pack.bonusCoins > 0 && (
-                        <div className="text-sm text-green-600 font-medium">
-                          + {pack.bonusCoins.toLocaleString()} bonus!
-                        </div>
-                      )}
-                      <div className="text-xs text-muted-foreground">
-                        Total: {pack.totalCoins.toLocaleString()} coins
-                      </div>
+                  <CardContent className="p-6 text-center space-y-3">
+                    <div className="text-4xl">{pack.emoji}</div>
+                    <h3 className="font-semibold text-lg">{pack.name}</h3>
+                    <p className="text-sm text-muted-foreground">{pack.description}</p>
+                    <div className="text-3xl font-bold text-amber-700">
+                      {pack.coins.toLocaleString()}
                     </div>
-
-                    <div className="text-2xl font-bold mb-4">
-                      ${(pack.price / 100).toFixed(2)}
-                    </div>
-
-                    <Button
-                      className="w-full"
-                      variant={pack.popular ? "default" : "outline"}
-                      disabled={buyCoinsMutation.isPending}
-                      onClick={() => buyCoinsMutation.mutate(pack.slug)}
-                    >
-                      {buyCoinsMutation.isPending ? "Processing..." : "Buy Now"}
-                    </Button>
+                    {pack.bonusCoins > 0 && (
+                      <div className="text-sm text-green-700 font-medium">
+                        +{pack.bonusCoins.toLocaleString()} bonus
+                      </div>
+                    )}
+                    <div className="text-2xl font-bold">${(pack.price / 100).toFixed(2)}</div>
+                    <Show when="signed-in">
+                      <Button
+                        className="w-full"
+                        variant={pack.popular ? "default" : "outline"}
+                        disabled={buyCoinsMutation.isPending}
+                        onClick={() => buyCoinsMutation.mutate(pack.slug)}
+                      >
+                        {buyCoinsMutation.isPending ? "Redirecting…" : "Buy with Stripe"}
+                      </Button>
+                    </Show>
+                    <Show when="signed-out">
+                      <SignInButton mode="modal">
+                        <Button className="w-full" variant="outline">
+                          Sign in to buy
+                        </Button>
+                      </SignInButton>
+                    </Show>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
+        </TabsContent>
 
-          {/* Info Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8"
-          >
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">What can I do with coins?</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">🐾</div>
-                    <div>
-                      <h4 className="font-medium">Adopt Pets</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Unlock adorable virtual companions to care for
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">🍖</div>
-                    <div>
-                      <h4 className="font-medium">Buy Food & Toys</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Keep your pets happy and healthy
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">🎓</div>
-                    <div>
-                      <h4 className="font-medium">Train Tricks</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Teach your pets new tricks and level them up
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        <TabsContent value="donate">
+          <Card className="max-w-xl mx-auto border-4 border-foreground shadow-[6px_6px_0_hsl(var(--foreground))]">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <HandHeart className="h-5 w-5 text-rose-500" /> Support Habiganize
+              </CardTitle>
+              <CardDescription>
+                One-time donation via Stripe. 100% goes to keeping the pups fed (and the servers
+                online).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-wrap gap-2">
+                {(donationPresets?.amounts ?? DEFAULT_DONATION_AMOUNTS).map((a) => (
+                  <Button
+                    key={a.cents}
+                    type="button"
+                    variant={donateAmount === a.cents ? "default" : "outline"}
+                    onClick={() => {
+                      setDonateAmount(a.cents);
+                      setCustomAmount("");
+                    }}
+                  >
+                    {a.label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wide" htmlFor="custom-donate">
+                  Custom amount (USD)
+                </label>
+                <Input
+                  id="custom-donate"
+                  inputMode="decimal"
+                  placeholder="e.g. 7.50"
+                  value={customAmount}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value);
+                    const dollars = Number(e.target.value);
+                    if (Number.isFinite(dollars) && dollars > 0) {
+                      setDonateAmount(Math.round(dollars * 100));
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wide" htmlFor="donate-msg">
+                  Optional note
+                </label>
+                <Textarea
+                  id="donate-msg"
+                  rows={3}
+                  maxLength={280}
+                  placeholder="Say hi to the pups…"
+                  value={donateMessage}
+                  onChange={(e) => setDonateMessage(e.target.value)}
+                />
+              </div>
+
+              <Show when="signed-in">
+                <Button
+                  className="w-full"
+                  size="lg"
+                  disabled={donateMutation.isPending || donateAmount < 100}
+                  onClick={() => donateMutation.mutate()}
+                >
+                  {donateMutation.isPending
+                    ? "Redirecting…"
+                    : `Donate $${(donateAmount / 100).toFixed(2)}`}
+                </Button>
+              </Show>
+              <Show when="signed-out">
+                <SignInButton mode="modal">
+                  <Button className="w-full" size="lg" variant="outline">
+                    Sign in to donate
+                  </Button>
+                </SignInButton>
+              </Show>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Billing & account</DialogTitle>
+          </DialogHeader>
+          <UserProfile appearance={clerkAppearance} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

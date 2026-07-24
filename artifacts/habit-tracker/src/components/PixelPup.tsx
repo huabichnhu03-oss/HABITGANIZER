@@ -73,16 +73,27 @@ function fill(ch: string, palette: PetPalette): string {
   }
 }
 
+const MONO_PALETTE: PetPalette = {
+  B: "#f5f5f5",
+  X: "#111111",
+  E: "#111111",
+  N: "#111111",
+  T: "#111111",
+};
+
 export function PixelPup({
   slug,
   size = 240,
   walking = false,
+  mono = false,
 }: {
   slug: string;
   size?: number;
   walking?: boolean;
+  /** Black-and-white pixel look (loading / wake screens). */
+  mono?: boolean;
 }) {
-  const palette = paletteFor(slug);
+  const palette = mono ? MONO_PALETTE : paletteFor(slug);
   const grid = gridFor(slug);
   const cols = grid[0].length;
   const rows = grid.length;

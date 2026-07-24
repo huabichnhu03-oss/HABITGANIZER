@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const acct = await loadAccount();
     if (!acct) {
-      throw new Error("No account on this device yet — create one first.");
+      throw new Error("No account on this device yet. Create one first.");
     }
     if (acct.username.toLowerCase() !== trimmed.toLowerCase()) {
       throw new Error("Wrong username or password.");

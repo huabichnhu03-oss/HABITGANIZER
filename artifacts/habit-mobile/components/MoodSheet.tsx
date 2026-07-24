@@ -144,7 +144,7 @@ export function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetP
           <TextInput
             value={note}
             onChangeText={(t) => setNote(t.slice(0, NOTE_MAX))}
-            placeholder="Optional — felt energized, harder than usual…"
+            placeholder="Optional, felt energized, harder than usual…"
             placeholderTextColor={colors.mutedForeground}
             multiline
             maxLength={NOTE_MAX}

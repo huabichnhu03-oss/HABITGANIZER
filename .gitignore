@@ -61,3 +61,6 @@ artifacts/habit-mobile/secrets/
 # Netlify
 .netlify
 
+
+artifacts/api-server/public/pets/_card_backups/
+.cache/

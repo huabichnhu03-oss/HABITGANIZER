@@ -44,7 +44,7 @@ function sendSupportPage(_req: Request, res: Response, _next: NextFunction): voi
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Support — HabitPup</title>
+  <title>Support | HabitPup</title>
   <style>
     :root { color-scheme: light; }
     body {
@@ -70,7 +70,7 @@ function sendSupportPage(_req: Request, res: Response, _next: NextFunction): voi
   </style>
 </head>
 <body>
-  <h1>HabitPup — Support</h1>
+  <h1>HabitPup Support</h1>
   <p>For help, billing questions, or privacy requests, contact:</p>
   <div class="card">
     <p><a href="mailto:${supportEmail}">${supportEmail}</a></p>
@@ -142,6 +142,27 @@ app.use(
     },
   }),
 );
+
+// Webhooks need the raw body for signature verification — mount before JSON parser.
+app.post(
+  "/api/webhooks/clerk",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    void import("./routes/webhooks/clerk-billing")
+      .then(({ clerkBillingWebhookHandler }) => clerkBillingWebhookHandler(req, res))
+      .catch(next);
+  },
+);
+app.post(
+  "/api/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    void import("./routes/webhooks/stripe")
+      .then(({ stripeWebhookHandler }) => stripeWebhookHandler(req, res))
+      .catch(next);
+  },
+);
+
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 

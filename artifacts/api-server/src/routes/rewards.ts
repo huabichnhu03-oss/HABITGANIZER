@@ -112,7 +112,7 @@ function activityReady(elapsedMs: number, kind: CareActivity): boolean {
 
 function feedLabel(hunger: number, food: number): string {
   if (hunger >= 100) return "Full";
-  if (food <= 0) return "No food — earn from habits";
+  if (food <= 0) return "No food. Earn from habits";
   if (hunger <= 0) return "Hungry now";
   return `${hunger}% full`;
 }
@@ -156,7 +156,7 @@ const FOOD_CATALOG: Array<{
 }> = [
   { slug: "kibble",  name: "Kibble",  emoji: "🥣", description: "Everyday crunchy basics. Cheap and reliable.", price: 8,  hungerAmount: 25, bonusLevel: 0, sortOrder: 1 },
   { slug: "treat",   name: "Treat",   emoji: "🍖", description: "Tasty mid-tier reward. Pups love it.",         price: 20, hungerAmount: 50, bonusLevel: 0, sortOrder: 2 },
-  { slug: "premium", name: "Premium", emoji: "🍱", description: "Gourmet meal — fills tummy and bumps a level.", price: 45, hungerAmount: 90, bonusLevel: 1, sortOrder: 3 },
+  { slug: "premium", name: "Premium", emoji: "🍱", description: "Gourmet meal. Fills tummy and bumps a level.", price: 45, hungerAmount: 90, bonusLevel: 1, sortOrder: 3 },
 ];
 
 const TOY_CATALOG: Array<{
@@ -1516,7 +1516,7 @@ router.post("/visitor/play", financialRateLimit, async (req, res) => {
       };
     });
     if (!result) {
-      res.status(400).json({ error: "No visitor right now — check back soon" });
+      res.status(400).json({ error: "No visitor right now. Check back soon" });
       return;
     }
     res.json(result);
@@ -1543,7 +1543,7 @@ router.post("/wallet/watch-ad-coins", financialRateLimit, async (req, res) => {
         const elapsed = now.getTime() - w.lastWatchAdCoinsAt.getTime();
         if (elapsed < AD_WATCH_COINS_COOLDOWN_MS) {
           const waitMs = AD_WATCH_COINS_COOLDOWN_MS - elapsed;
-          return { error: `Ad coin bonus on cooldown — try again in ${formatDuration(waitMs)}`, status: 400 };
+          return { error: `Ad coin bonus on cooldown. Try again in ${formatDuration(waitMs)}`, status: 400 };
         }
       }
       await tx
@@ -1582,17 +1582,17 @@ router.post("/visitor/watch-ad-speedup", financialRateLimit, async (req, res) =>
 
       const now = new Date();
       if (w.currentVisitorSlug) {
-        return { error: "A visitor is already here — tap Play first!", status: 400 };
+        return { error: "A visitor is already here. Tap Play first!", status: 400 };
       }
       const availableAt = new Date(w.visitorAvailableAt);
       if (availableAt.getTime() <= now.getTime()) {
-        return { error: "No wait to skip — your next visitor is almost here.", status: 400 };
+        return { error: "No wait to skip. Your next visitor is almost here.", status: 400 };
       }
       if (w.lastWatchAdVisitorSpeedupAt) {
         const elapsed = now.getTime() - w.lastWatchAdVisitorSpeedupAt.getTime();
         if (elapsed < VISITOR_AD_SPEEDUP_COOLDOWN_MS) {
           const waitMs = VISITOR_AD_SPEEDUP_COOLDOWN_MS - elapsed;
-          return { error: `Ad speed-up on cooldown — try again in ${formatDuration(waitMs)}`, status: 400 };
+          return { error: `Ad speed-up on cooldown. Try again in ${formatDuration(waitMs)}`, status: 400 };
         }
       }
       const beforeMs = availableAt.getTime();

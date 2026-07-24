@@ -128,7 +128,7 @@ export function FriendsLeaderboardPanel({ active }: { active: boolean }) {
           setCodeDraft("");
           invalidateSocialQueries(qc);
           if (res.becameFriends) {
-            Alert.alert("You're friends!", "They had already sent you a request — you're connected now.");
+            Alert.alert("You're friends!", "They had already sent you a request. You're connected now.");
           } else {
             Alert.alert("Request sent", "They'll see it next time they open the app.");
           }
@@ -346,7 +346,7 @@ export function FriendsLeaderboardPanel({ active }: { active: boolean }) {
               </Text>
             ) : (friendsQ.data?.length ?? 0) === 0 ? (
               <Text style={[styles.emptyLine, { color: colors.foreground }]}>
-                No friends yet — add someone by code above.
+                No friends yet. Add someone by code above.
               </Text>
             ) : (
               friendsQ.data!.map((f) => (

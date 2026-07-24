@@ -31,12 +31,29 @@ export const userSubscriptionsTable = pgTable("user_subscriptions", {
   currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  /** Clerk Billing subscription id (`sub_…` commerce id), synced via webhooks. */
+  clerkSubscriptionId: text("clerk_subscription_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeCustomerId: text("stripe_customer_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 export type UserSubscription = typeof userSubscriptionsTable.$inferSelect;
+
+/** One-time in-app donations (Stripe Checkout), not Clerk Billing. */
+export const donationsTable = pgTable("donations", {
+  id: serial("id").primaryKey(),
+  walletId: text("wallet_id").references(() => walletsTable.id, { onDelete: "cascade" }).notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull().default("pending"), // pending, completed, refunded, failed
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+});
+export type Donation = typeof donationsTable.$inferSelect;
 
 // Coin purchase packs
 export const coinPacksTable = pgTable("coin_packs", {
@@ -101,3 +118,8 @@ export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptionsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCoinPackSchema = createInsertSchema(coinPacksTable);
 export const insertCoinPurchaseSchema = createInsertSchema(coinPurchasesTable).omit({ id: true, createdAt: true });
+export const insertDonationSchema = createInsertSchema(donationsTable).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});

@@ -14,12 +14,14 @@ import { HabitDialog } from "@/components/habit-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
+import { useTranslation } from "@/i18n";
 
 type Tab = "active" | "archived";
 
 export function HabitsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("active");
   const activeQuery = useListHabits({ archived: false });
   const archivedQuery = useListHabits({ archived: true });
@@ -44,28 +46,28 @@ export function HabitsPage() {
     deleteHabit.mutate({ id }, {
       onSuccess: () => {
         invalidateLists();
-        toast({ title: "Habit deleted", description: "The habit and its history are gone for good." });
+        toast({ title: t("habits.deleted"), description: t("habits.deletedDesc") });
       }
     });
-  }, [deleteHabit, invalidateLists, toast]);
+  }, [deleteHabit, invalidateLists, toast, t]);
 
   const handleArchive = useCallback((id: number, name: string) => {
     archiveHabit.mutate({ id }, {
       onSuccess: () => {
         invalidateLists();
-        toast({ title: "Habit archived", description: `"${name}" is hidden from active lists. History is kept.` });
+        toast({ title: t("habits.archivedToast"), description: t("habits.archivedDesc", { name }) });
       }
     });
-  }, [archiveHabit, invalidateLists, toast]);
+  }, [archiveHabit, invalidateLists, toast, t]);
 
   const handleUnarchive = useCallback((id: number, name: string) => {
     unarchiveHabit.mutate({ id }, {
       onSuccess: () => {
         invalidateLists();
-        toast({ title: "Habit restored", description: `"${name}" is back in your active list.` });
+        toast({ title: t("habits.restoredToast"), description: t("habits.restoredDesc", { name }) });
       }
     });
-  }, [unarchiveHabit, invalidateLists, toast]);
+  }, [unarchiveHabit, invalidateLists, toast, t]);
 
   const openEdit = useCallback((habit: any) => {
     setEditingHabit(habit);
@@ -81,7 +83,7 @@ export function HabitsPage() {
     return (
       <div className="space-y-8">
         <ApiQueryErrorBanner
-          title="Couldn’t load habits"
+          title={t("habits.loadFailed")}
           onRetry={() => {
             void activeQuery.refetch();
             void archivedQuery.refetch();
@@ -111,8 +113,8 @@ export function HabitsPage() {
     <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-full">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter text-foreground">All Habits</h1>
-          <p className="text-sm sm:text-xl font-bold mt-1 text-foreground/80">Configure your daily routines.</p>
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter text-foreground">{t("habits.title")}</h1>
+          <p className="text-sm sm:text-xl font-bold mt-1 text-foreground/80">{t("habits.subtitle")}</p>
         </div>
         <button
           onClick={openCreate}
@@ -120,7 +122,7 @@ export function HabitsPage() {
           data-testid="button-create-habit"
         >
           <Plus className="w-5 h-5 sm:w-6 sm:h-6 mr-2" strokeWidth={3} />
-          NEW HABIT
+          {t("habits.newHabit")}
         </button>
       </header>
 
@@ -132,7 +134,7 @@ export function HabitsPage() {
           data-testid="tab-active"
           className={`brutal-btn px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-black uppercase tracking-tight ${tab === "active" ? "bg-foreground text-white" : "bg-white text-foreground"}`}
         >
-          Active
+          {t("habits.active")}
         </button>
         <button
           role="tab"
@@ -142,7 +144,7 @@ export function HabitsPage() {
           className={`brutal-btn px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-1.5 sm:gap-2 ${tab === "archived" ? "bg-foreground text-white" : "bg-white text-foreground"}`}
         >
           <Archive className="w-4 h-4" strokeWidth={3} />
-          Archived
+          {t("habits.archived")}
           {archivedCount > 0 && (
             <span className={`px-2 py-0.5 rounded-md border-brutal-sm text-sm ${tab === "archived" ? "bg-accent text-foreground" : "bg-foreground text-white"}`}>
               {archivedCount}
@@ -157,17 +159,19 @@ export function HabitsPage() {
             <div className="w-24 h-24 bg-accent border-brutal shadow-brutal rounded-full flex items-center justify-center mx-auto mb-6 -rotate-6">
               <Plus className="w-12 h-12 text-foreground" strokeWidth={3} />
             </div>
-            <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">No habits yet</h2>
-            <p className="text-xl font-bold mb-8">Create your first habit to start building your routine.</p>
-            <button onClick={openCreate} className="bg-primary text-white brutal-btn px-8 py-4 text-xl">CREATE HABIT</button>
+            <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">{t("habits.emptyActive")}</h2>
+            <p className="text-xl font-bold mb-8">{t("habits.emptyActiveHint")}</p>
+            <button onClick={openCreate} className="bg-primary text-white brutal-btn px-8 py-4 text-xl uppercase">
+              {t("habits.createHabit")}
+            </button>
           </div>
         ) : (
           <div className="text-center p-12 bg-white rounded-3xl border-brutal shadow-brutal">
             <div className="w-24 h-24 bg-secondary border-brutal shadow-brutal rounded-full flex items-center justify-center mx-auto mb-6 -rotate-6">
               <Archive className="w-12 h-12 text-foreground" strokeWidth={3} />
             </div>
-            <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">No archived habits</h2>
-            <p className="text-xl font-bold">Archived habits will appear here. Their history is always preserved.</p>
+            <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">{t("habits.emptyArchived")}</h2>
+            <p className="text-xl font-bold">{t("habits.emptyArchivedHint")}</p>
           </div>
         )
       ) : (
@@ -188,7 +192,7 @@ export function HabitsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-black text-base sm:text-2xl uppercase tracking-tight truncate" style={{ color: fg }}>{habit.name}</h3>
                         {isArchived && (
-                          <span className="bg-foreground text-white px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-black uppercase border-brutal-sm shadow-brutal-sm">Archived</span>
+                          <span className="bg-foreground text-white px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-black uppercase border-brutal-sm shadow-brutal-sm">{t("habits.archived")}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1.5 sm:mt-2">
@@ -208,14 +212,14 @@ export function HabitsPage() {
                   <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     {!isArchived && (
                       <>
-                        <button className="bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm hover:bg-muted active:translate-y-1 active:shadow-none transition-all" onClick={() => openEdit(habit)} data-testid={`button-edit-${habit.id}`} aria-label={`Edit ${habit.name}`}>
+                        <button className="bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm hover:bg-muted active:translate-y-1 active:shadow-none transition-all" onClick={() => openEdit(habit)} data-testid={`button-edit-${habit.id}`} aria-label={`${t("habits.edit")} ${habit.name}`}>
                           <Edit2 className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-foreground" strokeWidth={3} />
                         </button>
                         <button
                           className="bg-secondary text-foreground p-2 sm:p-3 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm hover:bg-secondary/80 active:translate-y-1 active:shadow-none transition-all"
                           onClick={() => handleArchive(habit.id, habit.name)}
                           data-testid={`button-archive-${habit.id}`}
-                          aria-label={`Archive ${habit.name}`}
+                          aria-label={`${t("habits.archive")} ${habit.name}`}
                         >
                           <Archive className="w-3.5 h-3.5 sm:w-5 sm:h-5" strokeWidth={3} />
                         </button>
@@ -226,29 +230,29 @@ export function HabitsPage() {
                         className="bg-accent text-foreground p-2 sm:p-3 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm hover:bg-accent/80 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4"
                         onClick={() => handleUnarchive(habit.id, habit.name)}
                         data-testid={`button-unarchive-${habit.id}`}
-                        aria-label={`Unarchive ${habit.name}`}
+                        aria-label={`${t("habits.restore")} ${habit.name}`}
                       >
                         <ArchiveRestore className="w-3.5 h-3.5 sm:w-5 sm:h-5" strokeWidth={3} />
-                        <span className="hidden sm:inline font-black uppercase tracking-tight text-sm">Unarchive</span>
+                        <span className="hidden sm:inline font-black uppercase tracking-tight text-sm">{t("habits.restore")}</span>
                       </button>
                     )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <button className="bg-destructive text-white p-2 sm:p-3 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm hover:bg-destructive/90 active:translate-y-1 active:shadow-none transition-all" data-testid={`button-delete-${habit.id}`} aria-label={`Delete ${habit.name}`}>
+                        <button className="bg-destructive text-white p-2 sm:p-3 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm hover:bg-destructive/90 active:translate-y-1 active:shadow-none transition-all" data-testid={`button-delete-${habit.id}`} aria-label={`${t("common.delete")} ${habit.name}`}>
                           <Trash2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" strokeWidth={3} />
                         </button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="rounded-3xl border-brutal shadow-brutal">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-2xl font-black uppercase">Delete habit forever?</AlertDialogTitle>
+                          <AlertDialogTitle className="text-2xl font-black uppercase">{t("habits.deleteTitle")}</AlertDialogTitle>
                           <AlertDialogDescription className="text-lg font-bold text-foreground/80">
-                            This permanently deletes "{habit.name}" and every completion in its history. This cannot be undone. If you just want to hide it from your active list, archive it instead.
+                            {t("habits.deleteBody", { name: habit.name })}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="mt-6 gap-3 sm:gap-0">
-                          <AlertDialogCancel className="brutal-btn bg-white text-foreground hover:bg-muted border-brutal h-12 text-lg">CANCEL</AlertDialogCancel>
-                          <AlertDialogAction className="brutal-btn bg-destructive text-white hover:bg-destructive/90 h-12 text-lg" onClick={() => handleDelete(habit.id)}>
-                            DELETE FOREVER
+                          <AlertDialogCancel className="brutal-btn bg-white text-foreground hover:bg-muted border-brutal h-12 text-lg uppercase">{t("common.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction className="brutal-btn bg-destructive text-white hover:bg-destructive/90 h-12 text-lg uppercase" onClick={() => handleDelete(habit.id)}>
+                            {t("habits.deleteConfirm")}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -260,10 +264,10 @@ export function HabitsPage() {
                 <div className="mt-auto pt-3 sm:pt-4 border-t-[3px] border-border flex flex-wrap gap-2 justify-between text-sm sm:text-lg font-bold text-foreground">
                   <div className="flex items-center gap-1.5 sm:gap-2 bg-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm">
                     <Flame className="w-4 h-4 sm:w-6 sm:h-6 fill-orange-500 text-orange-500" />
-                    <span>STREAK: <strong className="font-black text-base sm:text-xl">{habit.currentStreak}</strong></span>
+                    <span className="uppercase">{t("habits.streak")}: <strong className="font-black text-base sm:text-xl">{habit.currentStreak}</strong></span>
                   </div>
                   <div className="flex items-center bg-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl border-brutal-sm shadow-brutal-sm">
-                    <span>BEST: <strong className="font-black text-base sm:text-xl">{habit.longestStreak}</strong></span>
+                    <span className="uppercase">{t("habits.best")}: <strong className="font-black text-base sm:text-xl">{habit.longestStreak}</strong></span>
                   </div>
                 </div>
               </div>

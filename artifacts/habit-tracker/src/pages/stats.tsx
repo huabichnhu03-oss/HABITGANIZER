@@ -102,15 +102,21 @@ export function StatsPage() {
         <h2 className="text-3xl font-black uppercase tracking-tight mb-6 flex items-center gap-3">
           <TrendingUp className="w-8 h-8 text-foreground" strokeWidth={3} /> Scoreboard
         </h2>
-        <div className="brutal-card bg-white overflow-hidden p-0 max-w-full">
-          <table className="w-full max-w-full text-left border-collapse table-fixed">
+        <div className="brutal-card bg-white overflow-x-auto p-0 max-w-full">
+          <table className="w-full min-w-[20rem] sm:min-w-0 text-left border-collapse">
             <thead className="bg-foreground text-white border-b-brutal">
               <tr>
-                <th className="px-2 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base">Habit</th>
-                <th className="px-1 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base w-[60px] sm:w-auto">Streak</th>
-                <th className="px-2 sm:px-6 py-5 font-black uppercase tracking-widest hidden sm:table-cell">Best</th>
-                <th className="px-2 sm:px-6 py-5 font-black uppercase tracking-widest hidden md:table-cell">Total Done</th>
-                <th className="px-2 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base text-right w-[80px] sm:w-auto">Weekly</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base">Habit</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base whitespace-nowrap">
+                  <span className="sm:hidden">Strk</span>
+                  <span className="hidden sm:inline">Streak</span>
+                </th>
+                <th className="px-3 sm:px-6 py-5 font-black uppercase tracking-widest hidden sm:table-cell whitespace-nowrap">Best</th>
+                <th className="px-3 sm:px-6 py-5 font-black uppercase tracking-widest hidden md:table-cell whitespace-nowrap">Total Done</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base text-right whitespace-nowrap">
+                  <span className="sm:hidden">Wk</span>
+                  <span className="hidden sm:inline">Weekly</span>
+                </th>
               </tr>
             </thead>
             <tbody className="text-sm sm:text-lg font-bold">
@@ -118,7 +124,7 @@ export function StatsPage() {
                 const isLast = i === habitRows.length - 1;
                 return (
                   <tr key={stat.habitId} className={`hover:bg-muted/50 transition-colors ${!isLast ? 'border-b-[3px] border-border' : ''}`}>
-                    <td className="px-2 sm:px-6 py-3 sm:py-5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-5">
                       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                         <div
                           className="w-7 h-7 sm:w-12 sm:h-12 shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center border-brutal-sm shadow-brutal-sm"
@@ -129,7 +135,7 @@ export function StatsPage() {
                         <span className="font-black uppercase tracking-tight text-xs sm:text-xl truncate min-w-0">{stat.name}</span>
                       </div>
                     </td>
-                    <td className="px-1 sm:px-6 py-3 sm:py-5">
+                    <td className="px-3 sm:px-6 py-3 sm:py-5 whitespace-nowrap">
                       <div className="flex items-center gap-1 sm:gap-2">
                         {stat.currentStreak > 0 ? (
                           <><Flame className="w-4 h-4 sm:w-6 sm:h-6 fill-orange-500 text-orange-500 shrink-0" /> <span className="font-black text-base sm:text-2xl">{stat.currentStreak}</span></>
@@ -138,9 +144,9 @@ export function StatsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-2 sm:px-6 py-5 hidden sm:table-cell">{stat.longestStreak}</td>
-                    <td className="px-2 sm:px-6 py-5 hidden md:table-cell">{stat.totalCompletions}</td>
-                    <td className="px-2 sm:px-6 py-3 sm:py-5">
+                    <td className="px-3 sm:px-6 py-5 hidden sm:table-cell">{stat.longestStreak}</td>
+                    <td className="px-3 sm:px-6 py-5 hidden md:table-cell">{stat.totalCompletions}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-5">
                       <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-1 sm:gap-3">
                         <span className="font-black text-xs sm:text-xl whitespace-nowrap">{stat.weeklyCompletions}/7</span>
                         <div className="w-10 sm:w-24 h-2 sm:h-4 bg-muted rounded-full border-2 border-border overflow-hidden shadow-inner">

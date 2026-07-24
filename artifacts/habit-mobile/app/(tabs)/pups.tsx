@@ -122,7 +122,7 @@ const COINS_NOTICE_MS = 4500;
 const REWARD_POP_MS = 3000;
 
 const WATCH_AD_PATRON_COPY =
-  "Habiganize is non-profit. Watching a short ad is like buying our team a coffee at the café — thank you for helping keep the app free.";
+  "Habiganize is non-profit. Watching a short ad is like buying our team a coffee at the café. Thank you for helping keep the app free.";
 
 /** Layered bath art (optional PNGs). Web: habit-tracker/public/pups-art/bath/. Native: same URLs on your API static host → imgSrc(). */
 const BATH_ART_PATHS = {
@@ -468,11 +468,13 @@ export default function PupsScreen() {
                   <BrutalCard background={colors.card} shadowOffset={6}>
                     <View style={styles.petRow}>
                       <View style={[styles.petImageBox, { backgroundColor: colors.accent, borderColor: colors.foreground }]}>
-                        <Image
-                          source={{ uri: imgSrc(pet.imageUrl) }}
-                          style={styles.petImage}
-                          resizeMode="contain"
-                        />
+                        <View style={styles.petImagePad} pointerEvents="none">
+                          <Image
+                            source={{ uri: imgSrc(pet.imageUrl) }}
+                            style={styles.petImage}
+                            resizeMode="contain"
+                          />
+                        </View>
                         {pet.accessoryLayout.map((p, i) => (
                           <View
                             key={i}
@@ -481,7 +483,7 @@ export default function PupsScreen() {
                               { left: `${p.x * 100}%`, top: `${p.y * 100}%` },
                             ]}
                           >
-                            <PixelAccessory id={p.accessoryId} size={32} />
+                            <PixelAccessory id={p.accessoryId} size={20} />
                           </View>
                         ))}
                         <Text style={styles.miniMood}>{MOOD_EMOJI[pet.mood]}</Text>
@@ -672,7 +674,7 @@ function PetDetailModal({
         onError: (err) =>
           Alert.alert(
             "Can't feed",
-            formatPetCareErrorMessage(err, pet.name, "No food left — complete a habit!")
+            formatPetCareErrorMessage(err, pet.name, "No food left. Complete a habit!")
           ),
       }
     );
@@ -683,7 +685,7 @@ function PetDetailModal({
       {
         onSuccess: () => { popReward("+35 💧"); onChanged(); },
         onError: (err) =>
-          Alert.alert("Can't water", formatPetCareErrorMessage(err, pet.name, "No water left — complete a habit!")),
+          Alert.alert("Can't water", formatPetCareErrorMessage(err, pet.name, "No water left. Complete a habit!")),
       }
     );
   };
@@ -848,7 +850,7 @@ function PetDetailModal({
               <View style={styles.canvasPup} pointerEvents="none">
                 <Image
                   source={{ uri: imgSrc(pet.imageUrl) }}
-                  style={{ width: "85%", height: "85%", maxWidth: "100%", maxHeight: "100%" }}
+                  style={styles.canvasPupImg}
                   resizeMode="contain"
                 />
               </View>
@@ -1150,7 +1152,7 @@ function WatchAdBonusCoinsRow({ onChanged, colors }: { onChanged: () => void; co
     try {
       const res = await watchCoins.mutateAsync();
       onChanged();
-      Alert.alert("Bonus coins!", `+${res.coinsAwarded} coins — thank you for supporting Habiganize.`);
+      Alert.alert("Bonus coins!", `+${res.coinsAwarded} coins. Thank you for supporting Habiganize.`);
     } catch (err) {
       Alert.alert("Couldn’t claim reward", errorMessage(err, "Try again later."));
     }
@@ -1275,7 +1277,7 @@ function VisitorRow({
             </Text>
             {!ready && (
               <Text style={{ fontSize: 10, fontWeight: "700", color: colors.foreground, marginTop: 6, lineHeight: 14, opacity: 0.88 }}>
-                Watch a short ad to skip part of this wait — it helps our non-profit, like buying the team a coffee at the café.
+                Watch a short ad to skip part of this wait. It helps our non-profit, like buying the team a coffee at the café.
               </Text>
             )}
             {reward && <Text style={{ fontSize: 11, fontWeight: "900", color: colors.foreground }}>{reward}</Text>}
@@ -1952,6 +1954,8 @@ function DraggableAccessory({
   onCommit: (index: number, x: number, y: number) => void;
   onRemove: (index: number) => void;
 }) {
+  const accSize = Math.max(28, Math.round(canvasSize.width * 0.2) || 44);
+  const half = accSize / 2;
   const px = useSharedValue(placement.x * canvasSize.width);
   const py = useSharedValue(placement.y * canvasSize.height);
   const startX = useSharedValue(0);
@@ -1994,7 +1998,7 @@ function DraggableAccessory({
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: px.value - 24 }, { translateY: py.value - 24 }],
+    transform: [{ translateX: px.value - half }, { translateY: py.value - half }],
   }));
 
   return (
@@ -2003,7 +2007,7 @@ function DraggableAccessory({
         testID={`placed-${index}`}
         style={[styles.accessory, animatedStyle]}
       >
-        <PixelAccessory id={placement.accessoryId} size={44} />
+        <PixelAccessory id={placement.accessoryId} size={accSize} />
       </Animated.View>
     </GestureDetector>
   );
@@ -2169,11 +2173,17 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
+  /** Keep pet fill ~60% so accessory % coords match the dress-up canvas. */
+  petImagePad: {
+    width: "60%",
+    height: "60%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   petImage: { width: "100%", height: "100%" },
   miniAccessory: {
     position: "absolute",
-    fontSize: 22,
-    transform: [{ translateX: -11 }, { translateY: -11 }],
+    transform: [{ translateX: -10 }, { translateY: -10 }],
   },
   miniMood: { position: "absolute", top: 2, right: 4, fontSize: 18 },
   petName: { fontFamily: "Inter_900Black", fontSize: 20, letterSpacing: -0.5 },
@@ -2249,6 +2259,8 @@ const styles = StyleSheet.create({
   },
   canvasImg: { width: "100%", height: "100%" },
   canvasPup: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
+  /** Match collection card pet fill (~60%) so accessory placements stay consistent. */
+  canvasPupImg: { width: "60%", height: "60%", maxWidth: "100%", maxHeight: "100%" },
   moodOverlay: { position: "absolute", top: 8, right: 12, fontSize: 32 },
   rewardPop: {
     position: "absolute",

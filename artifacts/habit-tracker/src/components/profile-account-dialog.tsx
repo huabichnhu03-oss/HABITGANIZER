@@ -10,6 +10,7 @@ import {
   UserRound,
   Shield,
   LogOut,
+  MessageSquareHeart,
 } from "lucide-react";
 import { useClerk } from "@clerk/react";
 import {
@@ -24,9 +25,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useFeedbackDialog } from "@/contexts/feedback-dialog-context";
 import { createClerkAppearance } from "@/lib/clerk-appearance";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { LOCALES, useTranslation, type Locale } from "@/i18n";
 
 export type TabKey = "manage" | "about" | "account";
 
@@ -42,29 +45,29 @@ type MetaShape = Record<string, unknown>;
 const MANAGE_LINKS = [
   {
     href: "/friends",
-    label: "Friends",
-    description: "Friend code, requests, and your circle",
+    labelKey: "nav.friends",
+    descKey: "settings.friendsDesc",
     icon: Users,
     testId: "settings-link-friends",
   },
   {
     href: "/history",
-    label: "History",
-    description: "Past completions and calendar",
+    labelKey: "nav.history",
+    descKey: "settings.historyDesc",
     icon: HistoryIcon,
     testId: "settings-link-history",
   },
   {
     href: "/leaderboard",
-    label: "Ranks",
-    description: "Friends and global leaderboards",
+    labelKey: "nav.ranks",
+    descKey: "settings.ranksDesc",
     icon: Trophy,
     testId: "settings-link-ranks",
   },
   {
     href: "/premium",
-    label: "Premium",
-    description: "Plans and membership",
+    labelKey: "nav.premium",
+    descKey: "settings.premiumDesc",
     icon: Crown,
     testId: "settings-link-premium",
   },
@@ -82,6 +85,8 @@ export function ProfileAccountDialog({
   const { toast } = useToast();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const { openFeedback } = useFeedbackDialog();
+  const { t, locale, setLocale } = useTranslation();
   const [, setLocation] = useLocation();
   const [tab, setTab] = useState<TabKey>(initialTab);
 
@@ -123,11 +128,11 @@ export function ProfileAccountDialog({
           bio: bio.trim() || null,
         },
       });
-      toast({ title: "Profile saved" });
+      toast({ title: t("settings.profileSaved") });
     } catch (err) {
       toast({
-        title: "Couldn’t save profile",
-        description: err instanceof Error ? err.message : "Please try again.",
+        title: t("settings.profileSaveFailed"),
+        description: err instanceof Error ? err.message : t("settings.tryAgain"),
       });
     } finally {
       setBusy(false);
@@ -161,9 +166,9 @@ export function ProfileAccountDialog({
         aria-describedby={undefined}
       >
         <DialogHeader className="shrink-0 space-y-1.5 px-5 sm:px-6 pt-1 text-center sm:text-left">
-          <DialogTitle className="font-black uppercase tracking-tight text-xl">Settings</DialogTitle>
+          <DialogTitle className="font-black uppercase tracking-tight text-xl">{t("settings.title")}</DialogTitle>
           <DialogDescription>
-            Manage friends, ranks, your profile, and account from one place.
+            {t("settings.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -177,26 +182,55 @@ export function ProfileAccountDialog({
               value="manage"
               className="uppercase font-black text-[10px] xs:text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
             >
-              Manage
+              {t("settings.tabManage")}
             </TabsTrigger>
             <TabsTrigger
               value="about"
               className="uppercase font-black text-[10px] xs:text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
             >
-              Profile
+              {t("settings.tabProfile")}
             </TabsTrigger>
             <TabsTrigger
               value="account"
               className="uppercase font-black text-[10px] xs:text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
             >
-              Account
+              {t("settings.tabAccount")}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="manage" className="mt-0 flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 space-y-3 pr-1 -mr-0.5">
             <p className="text-sm font-medium text-muted-foreground">
-              Everything you need day to day — including Friends on mobile.
+              {t("settings.manageIntro")}
             </p>
+
+            <div className="rounded-xl border-2 border-foreground bg-white p-3 space-y-2 shadow-[3px_3px_0_#141414]">
+              <div>
+                <p className="font-black uppercase text-sm tracking-wide">{t("language.label")}</p>
+                <p className="text-xs font-medium text-muted-foreground">{t("language.description")}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2" role="group" aria-label={t("language.label")}>
+                {LOCALES.map((item) => {
+                  const active = locale === item.code;
+                  return (
+                    <button
+                      key={item.code}
+                      type="button"
+                      data-testid={`settings-locale-${item.code}`}
+                      onClick={() => setLocale(item.code as Locale)}
+                      className={cn(
+                        "rounded-xl border-2 border-foreground px-3 py-2.5 text-sm font-black uppercase tracking-wide transition-all",
+                        active
+                          ? "bg-primary text-white shadow-[3px_3px_0_#141414]"
+                          : "bg-white hover:bg-muted",
+                      )}
+                    >
+                      {t(`language.${item.labelKey}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="space-y-2">
               {MANAGE_LINKS.map((item) => {
                 const Icon = item.icon;
@@ -212,9 +246,9 @@ export function ProfileAccountDialog({
                       <Icon className="w-5 h-5" strokeWidth={2.5} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block font-black uppercase text-sm tracking-wide">{item.label}</span>
+                      <span className="block font-black uppercase text-sm tracking-wide">{t(item.labelKey)}</span>
                       <span className="block text-xs font-medium text-muted-foreground truncate">
-                        {item.description}
+                        {t(item.descKey)}
                       </span>
                     </span>
                     <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" strokeWidth={2.5} />
@@ -226,11 +260,31 @@ export function ProfileAccountDialog({
             <div className="pt-1 space-y-2">
               <button
                 type="button"
+                data-testid="settings-link-feedback"
+                onClick={() => {
+                  onOpenChange(false);
+                  openFeedback("settings");
+                }}
+                className="w-full flex items-center gap-3 rounded-xl border-2 border-foreground bg-white p-3 text-left hover:bg-muted active:translate-y-px transition-all shadow-[3px_3px_0_#141414]"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-foreground bg-accent">
+                  <MessageSquareHeart className="w-5 h-5" strokeWidth={2.5} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-black uppercase text-sm tracking-wide">{t("settings.sendFeedback")}</span>
+                  <span className="block text-xs font-medium text-muted-foreground truncate">
+                    {t("settings.sendFeedbackDesc")}
+                  </span>
+                </span>
+                <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" strokeWidth={2.5} />
+              </button>
+              <button
+                type="button"
                 onClick={() => setTab("about")}
                 className="w-full flex items-center gap-3 rounded-xl border-2 border-foreground bg-white p-3 text-left hover:bg-muted transition-all"
               >
                 <UserRound className="w-5 h-5 shrink-0" strokeWidth={2.5} />
-                <span className="flex-1 font-black uppercase text-sm tracking-wide">Edit profile</span>
+                <span className="flex-1 font-black uppercase text-sm tracking-wide">{t("settings.editProfile")}</span>
                 <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" />
               </button>
               <button
@@ -239,7 +293,7 @@ export function ProfileAccountDialog({
                 className="w-full flex items-center gap-3 rounded-xl border-2 border-foreground bg-white p-3 text-left hover:bg-muted transition-all"
               >
                 <Shield className="w-5 h-5 shrink-0" strokeWidth={2.5} />
-                <span className="flex-1 font-black uppercase text-sm tracking-wide">Email & security</span>
+                <span className="flex-1 font-black uppercase text-sm tracking-wide">{t("settings.emailSecurity")}</span>
                 <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" />
               </button>
               <button
@@ -251,7 +305,7 @@ export function ProfileAccountDialog({
                 data-testid="settings-sign-out"
                 className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-white px-4 py-3 font-black uppercase text-sm tracking-wide hover:bg-muted transition-all"
               >
-                <LogOut className="w-4 h-4" /> Sign out
+                <LogOut className="w-4 h-4" /> {t("common.signOut")}
               </button>
             </div>
           </TabsContent>
@@ -259,7 +313,7 @@ export function ProfileAccountDialog({
           <TabsContent value="about" className="mt-0 flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 space-y-4 pr-1 -mr-0.5">
             <div className="space-y-2">
               <Label htmlFor="profile-first-name" className="font-black uppercase text-xs tracking-wider">
-                Preferred name
+                {t("settings.preferredName")}
               </Label>
               <Input
                 id="profile-first-name"
@@ -267,12 +321,13 @@ export function ProfileAccountDialog({
                 maxLength={50}
                 onChange={(e) => setFirstName(e.target.value)}
                 className="border-2 border-foreground rounded-xl font-semibold bg-white"
-                placeholder="What should we call you?"
+                placeholder={t("settings.namePlaceholder")}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="profile-birthday" className="font-black uppercase text-xs tracking-wider">
-                Birthday <span className="font-normal text-muted-foreground normal-case">(optional)</span>
+                {t("settings.birthday")}{" "}
+                <span className="font-normal text-muted-foreground normal-case">{t("common.optional")}</span>
               </Label>
               <Input
                 id="profile-birthday"
@@ -284,7 +339,8 @@ export function ProfileAccountDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="profile-phone" className="font-black uppercase text-xs tracking-wider">
-                Phone <span className="font-normal text-muted-foreground normal-case">(optional)</span>
+                {t("settings.phone")}{" "}
+                <span className="font-normal text-muted-foreground normal-case">{t("common.optional")}</span>
               </Label>
               <Input
                 id="profile-phone"
@@ -293,12 +349,13 @@ export function ProfileAccountDialog({
                 maxLength={32}
                 onChange={(e) => setPhone(e.target.value)}
                 className="border-2 border-foreground rounded-xl bg-white font-medium"
-                placeholder="+1 …"
+                placeholder="+84 …"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="profile-bio" className="font-black uppercase text-xs tracking-wider">
-                Short note <span className="font-normal text-muted-foreground normal-case">(optional)</span>
+                {t("settings.shortNote")}{" "}
+                <span className="font-normal text-muted-foreground normal-case">{t("common.optional")}</span>
               </Label>
               <Textarea
                 id="profile-bio"
@@ -307,18 +364,18 @@ export function ProfileAccountDialog({
                 rows={3}
                 onChange={(e) => setBio(e.target.value)}
                 className="border-2 border-foreground rounded-xl bg-white font-medium resize-none"
-                placeholder="A line about your goals helps future features feel personal."
+                placeholder={t("settings.bioPlaceholder")}
               />
             </div>
             <div className="rounded-xl border-brutal-sm bg-white p-3 text-sm font-medium space-y-1">
-              <p className="text-muted-foreground text-xs uppercase font-black tracking-wider">Signed-in email</p>
-              <p className="font-bold truncate">{email ?? "None on file"}</p>
+              <p className="text-muted-foreground text-xs uppercase font-black tracking-wider">{t("settings.signedInEmail")}</p>
+              <p className="font-bold truncate">{email ?? t("settings.noneOnFile")}</p>
               <button
                 type="button"
                 onClick={() => setTab("account")}
                 className="text-primary font-black text-xs underline uppercase mt-1"
               >
-                Change email or connect Gmail →
+                {t("settings.changeEmail")}
               </button>
             </div>
             <Button
@@ -327,13 +384,13 @@ export function ProfileAccountDialog({
               className="w-full uppercase font-black border-2 border-foreground shadow-[4px_4px_0_#141414] rounded-xl active:translate-y-px active:shadow-none"
               onClick={() => saveAbout()}
             >
-              Save profile
+              {t("settings.saveProfile")}
             </Button>
           </TabsContent>
 
           <TabsContent value="account" className="mt-0 flex flex-1 min-h-0 flex-col gap-3 overflow-hidden">
             <p className="text-sm font-medium text-muted-foreground shrink-0">
-              Clerk hosts your passwords, MFA, Gmail / Google OAuth, and other sign-in methods here.
+              {t("settings.accountIntro")}
             </p>
             <div className="flex-1 min-h-[10rem] min-w-0 max-h-full overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl border-brutal-sm bg-white p-1 sm:p-2">
               <UserProfile routing="hash" appearance={clerkEmbeddedAppearance} />

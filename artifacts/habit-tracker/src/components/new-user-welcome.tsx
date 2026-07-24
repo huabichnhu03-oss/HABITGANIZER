@@ -114,7 +114,7 @@ export function NewUserWelcome() {
                   <Star className="w-10 h-10 fill-accent text-foreground" strokeWidth={2} /> Welcome!
                 </DialogTitle>
                 <DialogDescription className="text-base font-semibold text-foreground">
-                  Habiganize turns small daily ticks into streaks you can actually keep. You’re signed in — your habits and virtual pups stay with this account everywhere.
+                  Habiganize turns small daily ticks into streaks you can actually keep. You’re signed in. Your habits and virtual pups stay with this account everywhere.
                 </DialogDescription>
               </>
             )}
@@ -123,10 +123,10 @@ export function NewUserWelcome() {
                 <DialogTitle className="text-3xl font-black uppercase tracking-tight">Your rhythm</DialogTitle>
                 <DialogDescription asChild>
                   <ul className="text-base font-semibold space-y-3 text-left list-none p-0 m-0 text-foreground">
-                    <TourRow Icon={Star} title="Today" body="Tap habits to complete them — add a mood or note if you feel like journaling the moment." />
+                    <TourRow Icon={Star} title="Today" body="Tap habits to complete them. Add a mood or note if you feel like journaling the moment." />
                     <TourRow Icon={List} title="Habits" body="Schedule which days count, tweak icons & colors; this is home base." />
                     <TourRow Icon={BarChart2} title="Stats & history" body="Spot streak patterns and skim past completions without losing the neo-brutalist vibe." />
-                    <TourRow Icon={PawPrint} title="Pups" body="Earn coins and snacks as you stick with it — your companion grows with your consistency." />
+                    <TourRow Icon={PawPrint} title="Pups" body="Earn coins and snacks as you stick with it. Your companion grows with your consistency." />
                   </ul>
                 </DialogDescription>
               </>
@@ -135,7 +135,7 @@ export function NewUserWelcome() {
               <>
                 <DialogTitle className="text-3xl font-black uppercase tracking-tight">About you</DialogTitle>
                 <DialogDescription className="text-base font-semibold text-foreground">
-                  Optional extras help us personalize greetings and tune future perks. Gmail and OAuth live in Clerk — open account settings anytime.
+                  Optional extras help us personalize greetings and tune future perks. Gmail and OAuth live in Clerk. Open account settings anytime.
                 </DialogDescription>
                 <div className="grid gap-3 pt-2">
                   <div className="space-y-2">
@@ -206,7 +206,7 @@ export function NewUserWelcome() {
               <>
                 <DialogTitle className="text-3xl font-black uppercase tracking-tight">You’re ready</DialogTitle>
                 <DialogDescription className="text-base font-semibold text-foreground space-y-2">
-                  <p>Start on Today — add a habit if you haven’t yet. Tap your profile anytime from the sidebar (desktop) or top bar (mobile) to revisit these details.</p>
+                  <p>Start on Today. Add a habit if you haven’t yet. Tap your profile anytime from the sidebar (desktop) or top bar (mobile) to revisit these details.</p>
                   <p className="text-muted-foreground text-sm font-medium">Need Gmail or OAuth? Settings → Account.</p>
                 </DialogDescription>
               </>

@@ -258,7 +258,7 @@ export function GroceryList() {
               <Text style={[styles.hint, { color: colors.mutedForeground }]}>Loading…</Text>
             ) : ordered.length === 0 ? (
               <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-                Stick to your list — add items before you shop.
+                Stick to your list. Add items before you shop.
               </Text>
             ) : (
               ordered.map((item) => (

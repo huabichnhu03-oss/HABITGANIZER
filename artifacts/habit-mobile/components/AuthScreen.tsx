@@ -132,7 +132,7 @@ function SignUpPanel({ colors, onSwitch }: { colors: ReturnType<typeof useColors
     if (signUp.status === "complete") {
       await signUp.finalize({ navigate: () => {} });
     } else {
-      setError("Verification incomplete — please try again.");
+      setError("Verification incomplete. Please try again.");
     }
   };
 

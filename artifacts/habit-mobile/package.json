@@ -64,12 +64,13 @@
   },
   "dependencies": {
     "@react-native-community/datetimepicker": "^9.1.0",
+    "expo": "~54.0.34",
     "expo-health-connect": "^0.1.1",
     "expo-notifications": "^55.0.22",
-    "react-native-google-mobile-ads": "^16.3.3",
-    "react-native-health-connect": "^3.5.0",
-    "expo": "~54.0.34",
+    "expo-store-review": "^57.0.1",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "react-native-google-mobile-ads": "^16.3.3",
+    "react-native-health-connect": "^3.5.0"
   }
 }

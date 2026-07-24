@@ -16,7 +16,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrutalCard } from "@/components/BrutalCard";
+import { FeedbackSheet } from "@/components/FeedbackSheet";
 import { useColors } from "@/hooks/useColors";
+import { requestAppRating } from "@/lib/request-app-rating";
 
 type ManageLink = {
   href: "/(tabs)/friends" | "/(tabs)/history" | "/(tabs)/leaderboard";
@@ -65,6 +67,7 @@ export default function SettingsScreen() {
   const [bio, setBio] = useState("");
   const [busy, setBusy] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -190,6 +193,66 @@ export default function SettingsScreen() {
               <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
             </Pressable>
           ))}
+
+          {Platform.OS !== "web" ? (
+            <Pressable
+              testID="settings-link-rate"
+              onPress={() => void requestAppRating()}
+              style={({ pressed }) => [
+                styles.linkRow,
+                {
+                  borderColor: colors.foreground,
+                  backgroundColor: colors.card,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.linkIcon,
+                  { borderColor: colors.foreground, backgroundColor: colors.accent },
+                ]}
+              >
+                <Feather name="star" size={20} color={colors.foreground} />
+              </View>
+              <View style={styles.linkText}>
+                <Text style={[styles.linkLabel, { color: colors.foreground }]}>Rate Habiganize</Text>
+                <Text style={[styles.linkDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  Leave a review on the {Platform.OS === "ios" ? "App Store" : "Play Store"}
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
+            </Pressable>
+          ) : null}
+
+          <Pressable
+            testID="settings-link-feedback"
+            onPress={() => setFeedbackOpen(true)}
+            style={({ pressed }) => [
+              styles.linkRow,
+              {
+                borderColor: colors.foreground,
+                backgroundColor: colors.card,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.linkIcon,
+                { borderColor: colors.foreground, backgroundColor: colors.accent },
+              ]}
+            >
+              <Feather name="message-circle" size={20} color={colors.foreground} />
+            </View>
+            <View style={styles.linkText}>
+              <Text style={[styles.linkLabel, { color: colors.foreground }]}>Send feedback</Text>
+              <Text style={[styles.linkDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
+                Ideas, bugs, or a quick rating
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
         </View>
 
         <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 20 }]}>
@@ -293,7 +356,7 @@ export default function SettingsScreen() {
           ) : (
             <Text style={[styles.profileHint, { color: colors.mutedForeground }]}>
               {user?.firstName
-                ? `Hi ${user.firstName} — tap Edit to update your name, birthday, and more.`
+                ? `Hi ${user.firstName}. Tap Edit to update your name, birthday, and more.`
                 : "Tap Edit to set your preferred name and profile details."}
             </Text>
           )}
@@ -311,6 +374,8 @@ export default function SettingsScreen() {
           <Text style={[styles.signOutText, { color: colors.foreground }]}>Sign out</Text>
         </Pressable>
       </ScrollView>
+
+      <FeedbackSheet open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </View>
   );
 }

@@ -17,7 +17,7 @@ function todayKey(): string {
 
 function fireNotification(habit: Habit, time: string) {
   const title = `Reminder: ${habit.name}`;
-  const body = `It's ${time} — time to ${habit.name.toLowerCase()}.`;
+  const body = `It's ${time}. Time to ${habit.name.toLowerCase()}.`;
   if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
     try {
       new Notification(title, { body, tag: `habit-${habit.id}-${todayKey()}-${time}` });

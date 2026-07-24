@@ -108,7 +108,7 @@ const COINS_SHORTAGE_DESCRIPTION =
   "You don't have enough coins yet. Complete habits and track more tasks to earn more.";
 
 const WATCH_AD_PATRON_COPY =
-  "Habiganize is non-profit. Watching a short ad is like buying our team a coffee at the café — thank you for helping keep the app free.";
+  "Habiganize is non-profit. Watching a short ad is like buying our team a coffee at the café. Thank you for helping keep the app free.";
 
 /** Optional layered bath sprites under public/pups-art/bath/ — mirror on API static host for native clients. */
 const BATH_BACKGROUND_SRC = "/pups-art/bath/background.png";
@@ -126,6 +126,25 @@ function petArtSrc(path: string | null | undefined): string | null {
 }
 
 /** Prefer catalog PNG portraits; fall back to PixelPup if URL missing or image fails to load. */
+/** Accessory width as a fraction of the pet stage (≈64px on a 320px canvas). */
+const ACCESSORY_STAGE_RATIO = 0.2;
+/** Padding so the pet fills ~60% of the stage — matches dress-up on mobile and keeps % coords stable. */
+const PET_STAGE_PAD = "20%";
+
+function useElementWidth(ref: React.RefObject<HTMLElement | null>) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const sync = () => setWidth(el.getBoundingClientRect().width);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return width;
+}
+
 function PetPortrait({
   imageUrl,
   slug,
@@ -133,6 +152,7 @@ function PetPortrait({
   className,
   walking = false,
   alt = "",
+  fill = false,
 }: {
   imageUrl?: string | null;
   slug?: string | null;
@@ -140,12 +160,21 @@ function PetPortrait({
   className?: string;
   walking?: boolean;
   alt?: string;
+  /** When true, fill the parent box (object-contain) instead of a fixed pixel size. */
+  fill?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const src = petArtSrc(imageUrl);
   if (!src || failed) {
-    if (slug) return <PixelPup slug={slug} size={size} walking={walking} />;
-    return null;
+    if (!slug) return null;
+    if (fill) {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <PixelPup slug={slug} size={size} walking={walking} />
+        </div>
+      );
+    }
+    return <PixelPup slug={slug} size={size} walking={walking} />;
   }
   return (
     <>
@@ -156,19 +185,91 @@ function PetPortrait({
         src={src}
         alt={alt}
         draggable={false}
-        width={size}
-        height={size}
-        className={cn("object-contain select-none", className)}
+        width={fill ? undefined : size}
+        height={fill ? undefined : size}
+        className={cn("object-contain select-none", fill && "w-full h-full", className)}
         style={{
           imageRendering: "pixelated",
-          maxWidth: "100%",
-          height: "auto",
-          width: size,
+          ...(fill
+            ? { width: "100%", height: "100%" }
+            : { maxWidth: "100%", height: "auto", width: size }),
           animation: walking ? "pup-bob 0.45s steps(2) infinite" : undefined,
         }}
         onError={() => setFailed(true)}
       />
     </>
+  );
+}
+
+/** Pet + accessories on one stage so % placements match across collection and dress-up. */
+function DressedPetStage({
+  imageUrl,
+  slug,
+  alt,
+  layout,
+  stageRef,
+  interactive = false,
+  onPlacedPointerDown,
+  onRemoveAt,
+  className,
+}: {
+  imageUrl?: string | null;
+  slug?: string | null;
+  alt?: string;
+  layout: Placement[];
+  stageRef?: React.RefObject<HTMLDivElement | null>;
+  interactive?: boolean;
+  onPlacedPointerDown?: (e: React.PointerEvent, index: number) => void;
+  onRemoveAt?: (index: number) => void;
+  className?: string;
+}) {
+  const localRef = useRef<HTMLDivElement>(null);
+  const ref = stageRef ?? localRef;
+  const stageWidth = useElementWidth(ref);
+  const accSize = Math.max(28, Math.round(stageWidth * ACCESSORY_STAGE_RATIO) || 48);
+
+  return (
+    <div ref={ref} className={cn("absolute inset-0", className)}>
+      <div
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        style={{ padding: PET_STAGE_PAD }}
+      >
+        <PetPortrait imageUrl={imageUrl} slug={slug} size={256} alt={alt} fill />
+      </div>
+      {layout.map((p, i) => {
+        const style: React.CSSProperties = {
+          left: `${p.x * 100}%`,
+          top: `${p.y * 100}%`,
+          transform: "translate(-50%, -50%)",
+          touchAction: interactive ? "none" : undefined,
+        };
+        if (interactive) {
+          return (
+            <button
+              key={i}
+              type="button"
+              data-testid={`placed-${i}`}
+              onPointerDown={(e) => onPlacedPointerDown?.(e, i)}
+              onDoubleClick={() => onRemoveAt?.(i)}
+              className="absolute cursor-grab active:cursor-grabbing drop-shadow-[2px_2px_0_rgba(0,0,0,1)] flex items-center justify-center p-1"
+              style={style}
+              title="Drag to reposition · Double-click to remove"
+            >
+              <PixelAccessory id={p.accessoryId} size={accSize} />
+            </button>
+          );
+        }
+        return (
+          <div
+            key={i}
+            className="absolute pointer-events-none drop-shadow-[2px_2px_0_rgba(0,0,0,1)] flex items-center justify-center"
+            style={style}
+          >
+            <PixelAccessory id={p.accessoryId} size={accSize} />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -431,23 +532,15 @@ export function PupsPage() {
                   onClick={() => setOpenPetId(pet.id)}
                   className="text-left bg-card border-brutal shadow-brutal rounded-3xl overflow-hidden flex flex-col hover:translate-y-0.5 hover:shadow-brutal-sm transition-all"
                 >
-                  <div className="aspect-square flex items-center justify-center p-3 border-b-[3px] border-foreground relative">
-                    <PetPortrait imageUrl={pet.imageUrl} slug={pet.slug} size={120} alt={pet.name} />
-                    {pet.accessoryLayout.map((p, i) => (
-                      <div
-                        key={i}
-                        className="absolute pointer-events-none drop-shadow-[2px_2px_0_rgba(0,0,0,1)] flex items-center justify-center"
-                        style={{
-                          left: `${p.x * 100}%`,
-                          top: `${p.y * 100}%`,
-                          transform: "translate(-50%, -50%)",
-                        }}
-                      >
-                        <PixelAccessory id={p.accessoryId} size={56} />
-                      </div>
-                    ))}
-                    <span className="absolute top-2 right-2 text-3xl">{MOOD_EMOJI[pet.mood]}</span>
-                    <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-accent border-brutal-sm font-black text-xs">
+                  <div className="aspect-square border-b-[3px] border-foreground relative bg-secondary overflow-hidden">
+                    <DressedPetStage
+                      imageUrl={pet.imageUrl}
+                      slug={pet.slug}
+                      alt={pet.name}
+                      layout={pet.accessoryLayout}
+                    />
+                    <span className="absolute top-2 right-2 text-3xl z-10">{MOOD_EMOJI[pet.mood]}</span>
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-accent border-brutal-sm font-black text-xs z-10">
                       LV {pet.level}
                     </span>
                   </div>
@@ -698,7 +791,7 @@ function PetDetailModal({
         onError: (err) =>
           toast({
             title: "Can't feed",
-            description: formatPetCareErrorMessage(err, pet.name, "No food left — complete a habit!"),
+            description: formatPetCareErrorMessage(err, pet.name, "No food left. Complete a habit!"),
             variant: "destructive",
           }),
       }
@@ -951,46 +1044,34 @@ function PetDetailModal({
         >
           <div className="p-4 pb-8 space-y-4 md:pb-4">
           <div
-            ref={canvasRef}
             data-testid="pet-canvas"
             className="relative aspect-square bg-secondary border-brutal-sm rounded-2xl overflow-hidden touch-none select-none"
           >
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
-              <PetPortrait imageUrl={pet.imageUrl} slug={pet.slug} size={200} alt={pet.name} className="max-h-full" />
-            </div>
+            <DressedPetStage
+              stageRef={canvasRef}
+              imageUrl={pet.imageUrl}
+              slug={pet.slug}
+              alt={pet.name}
+              layout={layout}
+              interactive
+              onPlacedPointerDown={onPlacedPointerDown}
+              onRemoveAt={removeAt}
+            />
             {reward && (
               <div
                 key={reward.id}
                 data-testid="reward-pop"
                 className={cn(
-                  "absolute left-1/2 top-6 -translate-x-1/2 px-3 py-1.5 rounded-xl border-brutal-sm font-black text-lg pointer-events-none animate-in fade-in slide-in-from-top-2",
+                  "absolute left-1/2 top-6 -translate-x-1/2 px-3 py-1.5 rounded-xl border-brutal-sm font-black text-lg pointer-events-none animate-in fade-in slide-in-from-top-2 z-10",
                   reward.color
                 )}
               >
                 {reward.label}
               </div>
             )}
-            {layout.map((p, i) => (
-              <button
-                key={i}
-                data-testid={`placed-${i}`}
-                onPointerDown={(e) => onPlacedPointerDown(e, i)}
-                onDoubleClick={() => removeAt(i)}
-                className="absolute cursor-grab active:cursor-grabbing drop-shadow-[2px_2px_0_rgba(0,0,0,1)] flex items-center justify-center p-1"
-                style={{
-                  left: `${p.x * 100}%`,
-                  top: `${p.y * 100}%`,
-                  transform: "translate(-50%, -50%)",
-                  touchAction: "none",
-                }}
-                title="Drag to reposition · Double-click to remove"
-              >
-                <PixelAccessory id={p.accessoryId} size={64} />
-              </button>
-            ))}
-            <span className="absolute top-3 right-3 text-4xl pointer-events-none">{MOOD_EMOJI[pet.mood]}</span>
+            <span className="absolute top-3 right-3 text-4xl pointer-events-none z-10">{MOOD_EMOJI[pet.mood]}</span>
             {drag && (
-              <div className="absolute bottom-2 left-2 right-2 text-center text-[10px] font-black uppercase opacity-60">
+              <div className="absolute bottom-2 left-2 right-2 text-center text-[10px] font-black uppercase opacity-60 z-10">
                 Drop outside to remove
               </div>
             )}
@@ -1194,7 +1275,13 @@ function PetDetailModal({
               transform: "translate(-50%, -50%)",
             }}
           >
-            <PixelAccessory id={drag.accessoryId} size={64} />
+            <PixelAccessory
+              id={drag.accessoryId}
+              size={Math.max(
+                28,
+                Math.round((canvasRef.current?.getBoundingClientRect().width ?? 320) * ACCESSORY_STAGE_RATIO)
+              )}
+            />
           </span>
         )}
         {walkOpen && (
@@ -1358,7 +1445,7 @@ function WatchAdForCoinsRow({ onChanged }: { onChanged: () => void }) {
       onChanged();
       toast({
         title: "Bonus coins!",
-        description: `+${res.coinsAwarded} coins — thank you for supporting Habiganize.`,
+        description: `+${res.coinsAwarded} coins. Thank you for supporting Habiganize.`,
         variant: "success",
         duration: SUCCESS_TOAST_MS,
       });
@@ -1475,7 +1562,7 @@ function VisitorCard({ onChanged }: { onChanged: () => void }) {
           <div className="text-xs opacity-70 truncate">{showPet ? visitor.breed : ""}</div>
           {!ready && (
             <p className="text-[10px] sm:text-[11px] font-bold mt-1.5 leading-snug opacity-80">
-              Watch a short ad to skip part of this wait — it helps our non-profit, like buying the team a coffee at the café.
+              Watch a short ad to skip part of this wait. It helps our non-profit, like buying the team a coffee at the café.
             </p>
           )}
           {reward && <div className="text-xs font-black mt-1">{reward}</div>}

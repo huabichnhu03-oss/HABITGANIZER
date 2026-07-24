@@ -8,6 +8,9 @@ import rewardsRouter, { ensureSeed } from "./rewards";
 import healthMetricsRouter from "./health-metrics";
 import socialRouter from "./social";
 import subscriptionsRouter from "./subscriptions";
+import donationsRouter from "./donations";
+import feedbackRouter from "./feedback";
+import { ensureBillingSeed } from "../lib/billing-seed";
 
 const router: IRouter = Router();
 
@@ -26,11 +29,17 @@ router.use(rewardsRouter);
 router.use(healthMetricsRouter);
 router.use(socialRouter);
 router.use(subscriptionsRouter);
+router.use(donationsRouter);
+router.use(feedbackRouter);
 
 // Fire-and-forget seed; idempotent.
 ensureSeed().catch((err) => {
   // eslint-disable-next-line no-console
   console.error("Failed to seed rewards data", err);
+});
+ensureBillingSeed().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error("Failed to seed billing catalogs", err);
 });
 
 export default router;

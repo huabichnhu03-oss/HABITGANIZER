@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
+import { enUS, vi as viLocale } from "date-fns/locale";
 import {
   useListHabits,
   useCompleteHabit,
@@ -29,15 +30,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
 import { GroceryList } from "@/components/grocery-list";
+import { useTranslation } from "@/i18n";
 
 const NOTE_MAX = 280;
 
-const MOOD_OPTIONS: ReadonlyArray<{ value: HabitMood; emoji: string; label: string }> = [
-  { value: "great", emoji: "😀", label: "Great" },
-  { value: "good", emoji: "🙂", label: "Good" },
-  { value: "okay", emoji: "😐", label: "Okay" },
-  { value: "meh", emoji: "😕", label: "Meh" },
-  { value: "bad", emoji: "😞", label: "Bad" },
+const MOOD_KEYS: ReadonlyArray<{ value: HabitMood; emoji: string; labelKey: string }> = [
+  { value: "great", emoji: "😀", labelKey: "today.moodGreat" },
+  { value: "good", emoji: "🙂", labelKey: "today.moodGood" },
+  { value: "okay", emoji: "😐", labelKey: "today.moodOkay" },
+  { value: "meh", emoji: "😕", labelKey: "today.moodMeh" },
+  { value: "bad", emoji: "😞", labelKey: "today.moodBad" },
 ];
 
 const MOOD_EMOJI: Record<HabitMood, string> = {
@@ -59,13 +61,17 @@ type UpdateCtx = { previous: Habit[] | undefined };
 export function TodayPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t, locale } = useTranslation();
+  const dateFnsLocale = locale === "vi" ? viLocale : enUS;
   const todayWeekday = useMemo(() => format(new Date(), "EEE").toLowerCase(), []);
   const dateLabels = useMemo(
     () => ({
-      weekday: format(new Date(), "EEEE"),
-      pretty: format(new Date(), "MMMM do, yyyy"),
+      weekday: format(new Date(), "EEEE", { locale: dateFnsLocale }),
+      pretty: format(new Date(), locale === "vi" ? "d MMMM, yyyy" : "MMMM do, yyyy", {
+        locale: dateFnsLocale,
+      }),
     }),
-    [],
+    [dateFnsLocale, locale],
   );
 
   const habitsKey = useMemo(() => getListHabitsQueryKey(), []);
@@ -122,7 +128,7 @@ export function TodayPage() {
       onError: (_err, _vars, ctx) => {
         if (ctx?.previous) queryClient.setQueryData(habitsKey, ctx.previous);
         if (ctx?.previousDashboard !== undefined) queryClient.setQueryData(dashboardKey, ctx.previousDashboard);
-        toast({ title: "Couldn’t mark complete", description: "Please try again." });
+        toast({ title: t("today.markCompleteFailed"), description: t("today.tryAgain") });
       },
       onSuccess: (res, vars) => {
         // Sync with server response (mood/note may have been written too).
@@ -166,7 +172,7 @@ export function TodayPage() {
       onError: (_err, _vars, ctx) => {
         if (ctx?.previous) queryClient.setQueryData(habitsKey, ctx.previous);
         if (ctx?.previousDashboard !== undefined) queryClient.setQueryData(dashboardKey, ctx.previousDashboard);
-        toast({ title: "Couldn’t remove completion", description: "Please try again." });
+        toast({ title: t("today.removeCompleteFailed"), description: t("today.tryAgain") });
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: habitsKey });
@@ -188,7 +194,7 @@ export function TodayPage() {
       },
       onError: (_err, _vars, ctx) => {
         if (ctx?.previous) queryClient.setQueryData(habitsKey, ctx.previous);
-        toast({ title: "Couldn’t save", description: "Please try again." });
+        toast({ title: t("today.saveFailed"), description: t("today.tryAgain") });
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: habitsKey });
@@ -267,7 +273,7 @@ export function TodayPage() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <ApiQueryErrorBanner title="Couldn’t load habits" onRetry={() => refetch()}>
+        <ApiQueryErrorBanner title={t("today.loadFailed")} onRetry={() => refetch()}>
           {error instanceof Error ? error.message : undefined}
         </ApiQueryErrorBanner>
       </div>
@@ -300,8 +306,8 @@ export function TodayPage() {
       {activeHabits.length === 0 ? (
         <div className="text-center p-12 bg-white rounded-3xl border-brutal shadow-brutal">
           <Star className="w-20 h-20 fill-accent text-foreground mx-auto mb-6 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]" />
-          <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">Free Day!</h2>
-          <p className="text-xl font-bold">No habits scheduled for today. Enjoy the break!</p>
+          <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">{t("today.freeDay")}</h2>
+          <p className="text-xl font-bold">{t("today.freeDayHint")}</p>
         </div>
       ) : (
         <div className="grid gap-2">
@@ -419,6 +425,7 @@ function TodayProgressHeader({
   completed: number;
   total: number;
 }) {
+  const { t } = useTranslation();
   const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const allDone = total > 0 && completed === total;
 
@@ -451,7 +458,7 @@ function TodayProgressHeader({
             />
           </div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/70">
-            {allDone ? "All habits done!" : `${progressPct}% complete`}
+            {allDone ? t("today.allHabitsDone") : t("today.percentComplete", { pct: progressPct })}
           </p>
         </div>
       )}
@@ -462,6 +469,7 @@ function TodayProgressHeader({
 function WelcomeGreeting() {
   const { user } = useUser();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
 
   if (!user) return null;
@@ -469,7 +477,7 @@ function WelcomeGreeting() {
   const storedName =
     user.firstName || user.username || user.primaryEmailAddress?.emailAddress?.split("@")[0] || "";
 
-  const greetingLabel = storedName.trim() ? storedName : "Friend";
+  const greetingLabel = storedName.trim() ? storedName : t("today.friend");
 
   const [draft, setDraft] = useState(storedName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -488,15 +496,15 @@ function WelcomeGreeting() {
       setEditing(false);
     } catch (err) {
       toast({
-        title: "Couldn’t update name",
-        description: err instanceof Error ? err.message : "Please try again.",
+        title: t("today.updateNameFailed"),
+        description: err instanceof Error ? err.message : t("today.tryAgain"),
       });
     }
   };
 
   return (
     <div className="flex items-center gap-2 text-foreground" data-testid="welcome-greeting">
-      <span className="text-lg font-black uppercase tracking-tight">Welcome,</span>
+      <span className="text-lg font-black uppercase tracking-tight">{t("today.welcome")}</span>
       {editing ? (
         <>
           <input
@@ -517,7 +525,7 @@ function WelcomeGreeting() {
             data-testid="welcome-save"
             className="px-3 py-1 border-brutal-sm rounded-lg bg-primary text-white text-xs font-black uppercase"
           >
-            Save
+            {t("common.save")}
           </button>
           <button
             type="button"
@@ -525,7 +533,7 @@ function WelcomeGreeting() {
             data-testid="welcome-cancel"
             className="px-3 py-1 border-brutal-sm rounded-lg bg-white text-xs font-black uppercase"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </>
       ) : (
@@ -537,7 +545,7 @@ function WelcomeGreeting() {
             type="button"
             onClick={() => setEditing(true)}
             data-testid="welcome-edit"
-            aria-label="Edit username"
+            aria-label={t("today.editUsername")}
             className="ml-1 p-1.5 rounded-lg hover:bg-muted transition-colors"
           >
             <Pencil className="w-4 h-4" />
@@ -557,6 +565,7 @@ interface MoodSheetProps {
 }
 
 function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetProps) {
+  const { t } = useTranslation();
   const [mood, setMood] = useState<HabitMood | null>(null);
   const [note, setNote] = useState("");
   const lastHabitIdRef = useRef<number | null>(null);
@@ -583,25 +592,26 @@ function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetProps) {
       >
         <DialogHeader className="p-6 pb-3 border-b-2 border-foreground">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">
-            {habit?.name ?? "Habit"}
+            {habit?.name ?? t("today.habitFallback")}
           </DialogTitle>
           <DialogDescription className="font-bold text-foreground/70">
-            How did it feel? Add a quick note if you want.
+            {t("today.moodHint")}
           </DialogDescription>
         </DialogHeader>
         <div className="p-6 space-y-5">
           <div>
-            <p className="text-xs font-black uppercase tracking-wider mb-2">Mood</p>
-            <div className="flex justify-between gap-2" role="radiogroup" aria-label="Mood">
-              {MOOD_OPTIONS.map((opt) => {
+            <p className="text-xs font-black uppercase tracking-wider mb-2">{t("today.moodTitle")}</p>
+            <div className="flex justify-between gap-2" role="radiogroup" aria-label={t("today.moodTitle")}>
+              {MOOD_KEYS.map((opt) => {
                 const selected = mood === opt.value;
+                const label = t(opt.labelKey);
                 return (
                   <button
                     key={opt.value}
                     type="button"
                     role="radio"
                     aria-checked={selected}
-                    aria-label={opt.label}
+                    aria-label={label}
                     data-testid={`mood-option-${opt.value}`}
                     onClick={() => setMood(selected ? null : opt.value)}
                     className={cn(
@@ -619,7 +629,7 @@ function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetProps) {
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-black uppercase tracking-wider">Note</p>
+              <p className="text-xs font-black uppercase tracking-wider">{t("today.noteTitle")}</p>
               <span className={cn(
                 "text-xs font-bold",
                 charsLeft < 20 ? "text-destructive" : "text-foreground/60",
@@ -630,7 +640,7 @@ function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetProps) {
             <Textarea
               value={trimmedNote}
               onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))}
-              placeholder="Optional — e.g. felt energized, harder than usual…"
+              placeholder={t("today.notePlaceholderLong")}
               maxLength={NOTE_MAX}
               data-testid="mood-note-input"
               className="border-brutal-sm rounded-2xl font-medium min-h-[88px] resize-none"
@@ -644,7 +654,7 @@ function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetProps) {
             data-testid="mood-remove"
             className="font-black uppercase tracking-tight text-destructive hover:bg-destructive/10"
           >
-            <Trash2 className="w-4 h-4 mr-1" /> Remove
+            <Trash2 className="w-4 h-4 mr-1" /> {t("today.remove")}
           </Button>
           <div className="flex-1" />
           <Button
@@ -653,14 +663,14 @@ function MoodSheet({ open, habit, onClose, onSave, onRemove }: MoodSheetProps) {
             data-testid="mood-skip"
             className="border-brutal-sm rounded-xl font-black uppercase tracking-tight bg-white"
           >
-            <X className="w-4 h-4 mr-1" /> Skip
+            <X className="w-4 h-4 mr-1" /> {t("today.skip")}
           </Button>
           <Button
             onClick={() => onSave(mood, trimmedNote.trim() ? trimmedNote.trim() : null)}
             data-testid="mood-save"
             className="border-brutal-sm shadow-brutal-sm rounded-xl font-black uppercase tracking-tight bg-primary text-primary-foreground hover:bg-primary"
           >
-            <Check className="w-4 h-4 mr-1" /> Save
+            <Check className="w-4 h-4 mr-1" /> {t("common.save")}
           </Button>
         </div>
       </DialogContent>

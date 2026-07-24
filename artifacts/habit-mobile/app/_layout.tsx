@@ -23,6 +23,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ClerkAuthScreen } from "@/components/AuthScreen";
+import { RatePrompt } from "@/components/RatePrompt";
 import { API_URL } from "@/lib/config";
 import { initializeAdMob } from "@/lib/admob";
 import { configureNotifications, rescheduleAllReminders } from "@/lib/reminders";
@@ -107,17 +108,20 @@ function RootLayoutNav() {
   if (!isLoaded) return null;
   if (!isSignedIn) return <ClerkAuthScreen />;
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="settings"
-        options={{
-          headerShown: false,
-          presentation: "card",
-          animation: "slide_from_right",
-        }}
-      />
-    </Stack>
+    <>
+      <RatePrompt />
+      <Stack screenOptions={{ headerBackTitle: "Back" }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="settings"
+          options={{
+            headerShown: false,
+            presentation: "card",
+            animation: "slide_from_right",
+          }}
+        />
+      </Stack>
+    </>
   );
 }
 
