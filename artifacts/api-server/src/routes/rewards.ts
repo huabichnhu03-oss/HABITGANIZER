@@ -46,7 +46,7 @@ export const COINS_PER_COMPLETION = 10;
 export const FOOD_PER_COMPLETION = 1;
 export const WATER_PER_COMPLETION = 1;
 
-const PET_ART_VERSION = "4";
+const PET_ART_VERSION = "5";
 
 const DECAY_POINTS_PER_DAY = 10;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
