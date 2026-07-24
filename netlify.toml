@@ -1,15 +1,16 @@
-# HabitPup / Habiganize — Netlify frontend deploy
-# Replace YOUR_API_HOST with your API hostname (no https://),
-# e.g. habiganize.onrender.com or habitpup.up.railway.app
+# HabitPup / Habiganize — Netlify frontend deploy (WEB only — not habit-mobile)
+# API host: habiganize-api.onrender.com
 #
-# Site settings (if UI prompts override these):
-#   Base directory:     (leave empty / repo root)
-#   Package directory:  (leave empty / repo root)
+# CRITICAL — Netlify UI Site settings must match this file (UI overrides TOML):
+#   Base directory:     (empty / repo root)
+#   Package directory:  (empty / repo root)  ← never artifacts/habit-mobile
 #   Build command:      from [build] below
 #   Publish directory:  from [build] below
 #
-# Required env var in Netlify UI:
-#   VITE_CLERK_PUBLISHABLE_KEY=pk_test_... (or pk_live_... after Clerk DNS is verified)
+# Required env var in Netlify UI (production needs LIVE key):
+#   VITE_CLERK_PUBLISHABLE_KEY=pk_live_...  (must match CLERK_PUBLISHABLE_KEY)
+# Also finish Clerk custom-domain DNS for clerk.habitganizer.tech, or remove the
+# custom domain in Clerk and use the default Frontend API host.
 
 [build]
   command = "pnpm install --frozen-lockfile && pnpm --filter @workspace/habit-tracker run build"
@@ -22,19 +23,19 @@
 # Proxy API + legal pages to the Express host (same-origin for the browser).
 [[redirects]]
   from = "/api/*"
-  to = "https://YOUR_API_HOST/api/:splat"
+  to = "https://habiganize-api.onrender.com/api/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/privacy"
-  to = "https://YOUR_API_HOST/privacy"
+  to = "https://habiganize-api.onrender.com/privacy"
   status = 200
   force = true
 
 [[redirects]]
   from = "/support"
-  to = "https://YOUR_API_HOST/support"
+  to = "https://habiganize-api.onrender.com/support"
   status = 200
   force = true
 
