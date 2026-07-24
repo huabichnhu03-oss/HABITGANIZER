@@ -117,6 +117,61 @@ const COINS_TOAST_MS = 5000;
 const SUCCESS_TOAST_MS = 4000;
 const REWARD_POP_MS = 3000;
 
+/** Resolve API-relative pet art paths when the SPA talks to a remote API host. */
+function petArtSrc(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = (import.meta.env.VITE_API_URL as string | undefined)?.trim()?.replace(/\/+$/, "") ?? "";
+  return `${base}${path}`;
+}
+
+/** Prefer catalog PNG portraits; fall back to PixelPup if URL missing or image fails to load. */
+function PetPortrait({
+  imageUrl,
+  slug,
+  size,
+  className,
+  walking = false,
+  alt = "",
+}: {
+  imageUrl?: string | null;
+  slug?: string | null;
+  size: number;
+  className?: string;
+  walking?: boolean;
+  alt?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = petArtSrc(imageUrl);
+  if (!src || failed) {
+    if (slug) return <PixelPup slug={slug} size={size} walking={walking} />;
+    return null;
+  }
+  return (
+    <>
+      {walking ? (
+        <style>{`@keyframes pup-bob { 0% { transform: translateY(0) } 50% { transform: translateY(-4%) } 100% { transform: translateY(0) } }`}</style>
+      ) : null}
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        width={size}
+        height={size}
+        className={cn("object-contain select-none", className)}
+        style={{
+          imageRendering: "pixelated",
+          maxWidth: "100%",
+          height: "auto",
+          width: size,
+          animation: walking ? "pup-bob 0.45s steps(2) infinite" : undefined,
+        }}
+        onError={() => setFailed(true)}
+      />
+    </>
+  );
+}
+
 type ShopCategory = "pets" | "food" | "toys";
 
 const SHOP_CATEGORIES: { id: ShopCategory; label: string }[] = [
@@ -321,7 +376,7 @@ export function PupsPage() {
                     className="bg-card border-brutal shadow-brutal rounded-3xl overflow-hidden flex flex-col"
                   >
                     <div className="aspect-square flex items-center justify-center p-3 border-b-[3px] border-foreground">
-                      <PixelPup slug={pet.slug} size={120} />
+                      <PetPortrait imageUrl={pet.imageUrl} slug={pet.slug} size={120} alt={pet.name} />
                     </div>
                     <div className="p-3 sm:p-4 flex-1 flex flex-col gap-2">
                       <div className="flex flex-col gap-0.5 min-[390px]:flex-row min-[390px]:items-baseline min-[390px]:justify-between">
@@ -377,7 +432,7 @@ export function PupsPage() {
                   className="text-left bg-card border-brutal shadow-brutal rounded-3xl overflow-hidden flex flex-col hover:translate-y-0.5 hover:shadow-brutal-sm transition-all"
                 >
                   <div className="aspect-square flex items-center justify-center p-3 border-b-[3px] border-foreground relative">
-                    <PixelPup slug={pet.slug} size={120} />
+                    <PetPortrait imageUrl={pet.imageUrl} slug={pet.slug} size={120} alt={pet.name} />
                     {pet.accessoryLayout.map((p, i) => (
                       <div
                         key={i}
@@ -901,7 +956,7 @@ function PetDetailModal({
             className="relative aspect-square bg-secondary border-brutal-sm rounded-2xl overflow-hidden touch-none select-none"
           >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
-              <PixelPup slug={pet.slug} size={200} />
+              <PetPortrait imageUrl={pet.imageUrl} slug={pet.slug} size={200} alt={pet.name} className="max-h-full" />
             </div>
             {reward && (
               <div
@@ -1145,6 +1200,7 @@ function PetDetailModal({
         {walkOpen && (
           <WalkActivity
             petSlug={pet.slug}
+            imageUrl={pet.imageUrl}
             onClose={() => setWalkOpen(false)}
             onComplete={handleWalkComplete}
           />
@@ -1152,6 +1208,7 @@ function PetDetailModal({
         {bathOpen && (
           <BathActivity
             petSlug={pet.slug}
+            imageUrl={pet.imageUrl}
             onClose={() => setBathOpen(false)}
             onComplete={handleBathComplete}
           />
@@ -1399,8 +1456,13 @@ function VisitorCard({ onChanged }: { onChanged: () => void }) {
         className="rounded-3xl bg-fuchsia-200 border-brutal shadow-brutal p-3 sm:p-5 flex items-center gap-3 sm:gap-4"
       >
         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl border-brutal-sm flex items-center justify-center overflow-hidden shrink-0">
-          {visitor.slug ? (
-            <PixelPup slug={visitor.slug} size={72} walking={false} />
+          {visitor.imageUrl || visitor.slug ? (
+            <PetPortrait
+              imageUrl={visitor.imageUrl}
+              slug={visitor.slug}
+              size={72}
+              alt={visitor.name ?? "Visitor"}
+            />
           ) : (
             <PartyPopper className="w-10 h-10" strokeWidth={3} />
           )}
@@ -1678,10 +1740,12 @@ function BathBubbleField({ washProgress }: { washProgress: number }) {
 
 function BathActivity({
   petSlug,
+  imageUrl,
   onClose,
   onComplete,
 }: {
   petSlug: string;
+  imageUrl: string;
   onClose: () => void;
   onComplete: () => void;
 }) {
@@ -1832,8 +1896,8 @@ function BathActivity({
         ) : null}
 
         <div className="absolute inset-0 flex items-center justify-center pt-[14%] pointer-events-none pb-[6%]">
-          <div className="w-[54%] select-none drop-shadow-[3px_3px_0_rgba(0,0,0,0.35)] z-[1]">
-            <PixelPup slug={petSlug} size={120} />
+          <div className="w-[54%] select-none drop-shadow-[3px_3px_0_rgba(0,0,0,0.35)] z-[1] flex justify-center">
+            <PetPortrait imageUrl={imageUrl} slug={petSlug} size={120} />
           </div>
         </div>
 
@@ -1923,10 +1987,12 @@ function BathActivity({
 
 function WalkActivity({
   petSlug,
+  imageUrl,
   onClose,
   onComplete,
 }: {
   petSlug: string;
+  imageUrl: string;
   onClose: () => void;
   onComplete: () => void;
 }) {
@@ -2022,7 +2088,7 @@ function WalkActivity({
           className="absolute top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing w-16 h-16 flex items-center justify-center"
           style={{ left: pupX, transform: "translate(-50%, -50%)", touchAction: "none" }}
         >
-          <PixelPup slug={petSlug} size={64} walking />
+          <PetPortrait imageUrl={imageUrl} slug={petSlug} size={64} walking />
         </div>
       </div>
       <div className="mt-4 w-[320px]">
