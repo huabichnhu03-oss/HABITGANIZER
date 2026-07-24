@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { UserProfile, useUser } from "@clerk/react";
+import { useLocation } from "wouter";
+import {
+  Users,
+  History as HistoryIcon,
+  Trophy,
+  Crown,
+  ChevronRight,
+  UserRound,
+  Shield,
+  LogOut,
+} from "lucide-react";
+import { useClerk } from "@clerk/react";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +28,7 @@ import { createClerkAppearance } from "@/lib/clerk-appearance";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-type TabKey = "about" | "account";
+export type TabKey = "manage" | "about" | "account";
 
 export type ProfileAccountDialogProps = {
   open: boolean;
@@ -27,6 +39,37 @@ export type ProfileAccountDialogProps = {
 
 type MetaShape = Record<string, unknown>;
 
+const MANAGE_LINKS = [
+  {
+    href: "/friends",
+    label: "Friends",
+    description: "Friend code, requests, and your circle",
+    icon: Users,
+    testId: "settings-link-friends",
+  },
+  {
+    href: "/history",
+    label: "History",
+    description: "Past completions and calendar",
+    icon: HistoryIcon,
+    testId: "settings-link-history",
+  },
+  {
+    href: "/leaderboard",
+    label: "Ranks",
+    description: "Friends and global leaderboards",
+    icon: Trophy,
+    testId: "settings-link-ranks",
+  },
+  {
+    href: "/premium",
+    label: "Premium",
+    description: "Plans and membership",
+    icon: Crown,
+    testId: "settings-link-premium",
+  },
+] as const;
+
 function readMeta(user: NonNullable<ReturnType<typeof useUser>["user"]>): MetaShape {
   return (user.unsafeMetadata ?? {}) as MetaShape;
 }
@@ -34,10 +77,12 @@ function readMeta(user: NonNullable<ReturnType<typeof useUser>["user"]>): MetaSh
 export function ProfileAccountDialog({
   open,
   onOpenChange,
-  initialTab = "about",
+  initialTab = "manage",
 }: ProfileAccountDialogProps) {
   const { toast } = useToast();
   const { user } = useUser();
+  const { signOut } = useClerk();
+  const [, setLocation] = useLocation();
   const [tab, setTab] = useState<TabKey>(initialTab);
 
   const meta = user ? readMeta(user) : {};
@@ -59,6 +104,11 @@ export function ProfileAccountDialog({
   }, [open, initialTab, user]);
 
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
+
+  const goTo = (href: string) => {
+    onOpenChange(false);
+    setLocation(href);
+  };
 
   const saveAbout = async () => {
     if (!user) return;
@@ -111,9 +161,9 @@ export function ProfileAccountDialog({
         aria-describedby={undefined}
       >
         <DialogHeader className="shrink-0 space-y-1.5 px-5 sm:px-6 pt-1 text-center sm:text-left">
-          <DialogTitle className="font-black uppercase tracking-tight text-xl">Your profile</DialogTitle>
+          <DialogTitle className="font-black uppercase tracking-tight text-xl">Settings</DialogTitle>
           <DialogDescription>
-            Update how we greet you here. Use the Account tab for email, Gmail, passwords, and connected accounts.
+            Manage friends, ranks, your profile, and account from one place.
           </DialogDescription>
         </DialogHeader>
 
@@ -122,20 +172,89 @@ export function ProfileAccountDialog({
           onValueChange={(v) => setTab(v as TabKey)}
           className="flex min-h-0 flex-1 flex-col gap-3 px-5 sm:px-6 pb-2 min-w-0"
         >
-          <TabsList className="grid w-full grid-cols-2 shrink-0 border-2 border-foreground rounded-xl bg-accent p-1 h-auto">
+          <TabsList className="grid w-full grid-cols-3 shrink-0 border-2 border-foreground rounded-xl bg-accent p-1 h-auto">
+            <TabsTrigger
+              value="manage"
+              className="uppercase font-black text-[10px] xs:text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
+            >
+              Manage
+            </TabsTrigger>
             <TabsTrigger
               value="about"
-              className="uppercase font-black text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
+              className="uppercase font-black text-[10px] xs:text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
             >
-              About you
+              Profile
             </TabsTrigger>
             <TabsTrigger
               value="account"
-              className="uppercase font-black text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
+              className="uppercase font-black text-[10px] xs:text-xs data-[state=active]:shadow-[3px_3px_0_#141414]"
             >
-              Email & accounts
+              Account
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="manage" className="mt-0 flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 space-y-3 pr-1 -mr-0.5">
+            <p className="text-sm font-medium text-muted-foreground">
+              Everything you need day to day — including Friends on mobile.
+            </p>
+            <div className="space-y-2">
+              {MANAGE_LINKS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.href}
+                    type="button"
+                    data-testid={item.testId}
+                    onClick={() => goTo(item.href)}
+                    className="w-full flex items-center gap-3 rounded-xl border-2 border-foreground bg-white p-3 text-left hover:bg-muted active:translate-y-px transition-all shadow-[3px_3px_0_#141414]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-foreground bg-accent">
+                      <Icon className="w-5 h-5" strokeWidth={2.5} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-black uppercase text-sm tracking-wide">{item.label}</span>
+                      <span className="block text-xs font-medium text-muted-foreground truncate">
+                        {item.description}
+                      </span>
+                    </span>
+                    <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" strokeWidth={2.5} />
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-1 space-y-2">
+              <button
+                type="button"
+                onClick={() => setTab("about")}
+                className="w-full flex items-center gap-3 rounded-xl border-2 border-foreground bg-white p-3 text-left hover:bg-muted transition-all"
+              >
+                <UserRound className="w-5 h-5 shrink-0" strokeWidth={2.5} />
+                <span className="flex-1 font-black uppercase text-sm tracking-wide">Edit profile</span>
+                <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("account")}
+                className="w-full flex items-center gap-3 rounded-xl border-2 border-foreground bg-white p-3 text-left hover:bg-muted transition-all"
+              >
+                <Shield className="w-5 h-5 shrink-0" strokeWidth={2.5} />
+                <span className="flex-1 font-black uppercase text-sm tracking-wide">Email & security</span>
+                <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  void signOut();
+                }}
+                data-testid="settings-sign-out"
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-white px-4 py-3 font-black uppercase text-sm tracking-wide hover:bg-muted transition-all"
+              >
+                <LogOut className="w-4 h-4" /> Sign out
+              </button>
+            </div>
+          </TabsContent>
 
           <TabsContent value="about" className="mt-0 flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 space-y-4 pr-1 -mr-0.5">
             <div className="space-y-2">

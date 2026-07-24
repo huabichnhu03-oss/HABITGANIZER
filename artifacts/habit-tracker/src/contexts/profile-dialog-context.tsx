@@ -6,9 +6,9 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import { ProfileAccountDialog } from "@/components/profile-account-dialog";
+import { ProfileAccountDialog, type TabKey } from "@/components/profile-account-dialog";
 
-export type ProfileDialogTab = "about" | "account";
+export type ProfileDialogTab = TabKey;
 
 type ProfileDialogContextValue = {
   openProfile: (initialTab?: ProfileDialogTab) => void;
@@ -18,9 +18,9 @@ const ProfileDialogContext = createContext<ProfileDialogContextValue | null>(nul
 
 export function ProfileAccountProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [initialTab, setInitialTab] = useState<ProfileDialogTab>("about");
+  const [initialTab, setInitialTab] = useState<ProfileDialogTab>("manage");
 
-  const openProfile = useCallback((tab: ProfileDialogTab = "about") => {
+  const openProfile = useCallback((tab: ProfileDialogTab = "manage") => {
     setInitialTab(tab);
     setOpen(true);
   }, []);

@@ -207,7 +207,7 @@ export function NewUserWelcome() {
                 <DialogTitle className="text-3xl font-black uppercase tracking-tight">You’re ready</DialogTitle>
                 <DialogDescription className="text-base font-semibold text-foreground space-y-2">
                   <p>Start on Today — add a habit if you haven’t yet. Tap your profile anytime from the sidebar (desktop) or top bar (mobile) to revisit these details.</p>
-                  <p className="text-muted-foreground text-sm font-medium">Need Gmail or OAuth? Profile → Email & accounts.</p>
+                  <p className="text-muted-foreground text-sm font-medium">Need Gmail or OAuth? Settings → Account.</p>
                 </DialogDescription>
               </>
             )}

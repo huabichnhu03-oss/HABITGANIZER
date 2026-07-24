@@ -148,19 +148,10 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => openProfile()}
             data-testid="open-profile-mobile"
-            aria-label="Profile and account"
+            aria-label="Settings"
             className="p-2 rounded-xl border-brutal-sm bg-white hover:bg-muted active:translate-y-0.5 transition-all"
           >
             <UserRound className="w-4 h-4" strokeWidth={2.5} />
-          </button>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            data-testid="sign-out-mobile"
-            aria-label="Sign out"
-            className="p-2 rounded-xl border-brutal-sm bg-white hover:bg-muted active:translate-y-0.5 transition-all"
-          >
-            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -180,7 +171,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
             className="mt-3 w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl border-brutal-sm bg-white font-bold text-sm uppercase tracking-wide hover:shadow-brutal-sm hover:bg-muted transition-all"
           >
             <UserRound className="w-5 h-5" strokeWidth={2.5} />
-            <span className="tracking-wide">Profile</span>
+            <span className="tracking-wide">Settings</span>
           </button>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6">

@@ -14,7 +14,6 @@ import * as Haptics from "expo-haptics";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Platform,
   Pressable,
@@ -28,7 +27,8 @@ import { BrutalCard } from "@/components/BrutalCard";
 import { GroceryList } from "@/components/GroceryList";
 import { MoodSheet, MOOD_EMOJI } from "@/components/MoodSheet";
 import { WalletChips } from "@/components/WalletChips";
-import { useClerk, useUser } from "@clerk/expo";
+import { useUser } from "@clerk/expo";
+import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { usePrefetchOnFocus } from "@/hooks/usePrefetchOnFocus";
 import {
@@ -452,41 +452,36 @@ const keyExtractor = (h: Habit) => String(h.id);
 const Separator = () => <View style={{ height: 8 }} />;
 
 function WelcomeBar({ colors }: { colors: ColorTokens }) {
-  const { signOut } = useClerk();
   const { user } = useUser();
   const displayName = user?.firstName
     ?? user?.username
     ?? user?.emailAddresses?.[0]?.emailAddress?.split("@")[0]
     ?? "";
 
-  if (!displayName) return null;
-
-  const confirmSignOut = () => {
-    Alert.alert("Sign out?", "You can log back in anytime.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => { void signOut(); } },
-    ]);
-  };
-
   return (
     <View style={welcomeStyles.row} testID="welcome-bar">
       <View style={welcomeStyles.greeting}>
         <Text style={[welcomeStyles.text, { color: colors.foreground }]} numberOfLines={1}>
-          Welcome,{" "}
-          <Text style={{ fontFamily: "Inter_900Black" }} testID="welcome-username">
-            {displayName}
-          </Text>
+          {displayName ? (
+            <>
+              Welcome,{" "}
+              <Text style={{ fontFamily: "Inter_900Black" }} testID="welcome-username">
+                {displayName}
+              </Text>
+            </>
+          ) : (
+            <Text style={{ fontFamily: "Inter_900Black" }}>HABIGANIZE</Text>
+          )}
         </Text>
       </View>
       <Pressable
-        onPress={confirmSignOut}
-        testID="sign-out"
-        accessibilityLabel="Sign out"
+        onPress={() => router.push("/settings")}
+        testID="open-settings"
+        accessibilityLabel="Settings"
         style={[welcomeStyles.signOutBtn, { borderColor: colors.foreground, backgroundColor: colors.card }]}
       >
-        <Feather name="log-out" size={16} color={colors.foreground} />
+        <Feather name="settings" size={16} color={colors.foreground} />
       </Pressable>
-
     </View>
   );
 }

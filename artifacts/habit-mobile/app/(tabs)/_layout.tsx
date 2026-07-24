@@ -68,15 +68,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="history"
-        options={{
-          title: "History",
-          tabBarIcon: ({ color }) => (
-            <Feather name="clock" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="health"
         options={{
           title: "Health",
@@ -94,22 +85,26 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Reachable from Settings — kept off the crowded tab bar */}
+      <Tabs.Screen
+        name="history"
+        options={{
+          href: null,
+          title: "History",
+        }}
+      />
       <Tabs.Screen
         name="friends"
         options={{
+          href: null,
           title: "Friends",
-          tabBarIcon: ({ color }) => (
-            <Feather name="users" size={24} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
+          href: null,
           title: "Ranks",
-          tabBarIcon: ({ color }) => (
-            <Feather name="award" size={24} color={color} />
-          ),
         }}
       />
     </Tabs>
