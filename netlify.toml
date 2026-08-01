@@ -1,4 +1,5 @@
-# HabitPup / Habiganize — Netlify frontend deploy (WEB only — not habit-mobile)
+# HabitPup / Habiganize — Netlify is the ONLY web host for this project.
+# Do not use Vercel for Habiganize (see root vercel.json — Git auto-deploys off).
 # API host: habiganize-api.onrender.com
 #
 # CRITICAL — Netlify UI Site settings must match this file (UI overrides TOML):

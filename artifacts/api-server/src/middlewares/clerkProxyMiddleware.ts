@@ -47,7 +47,7 @@ export function getClerkProxyHost(req: {
   headers: IncomingHttpHeaders;
 }): string | undefined {
   // Only trust forwarded headers when explicitly configured (V26, V27).
-  // In production behind a reverse proxy (Railway, Vercel), set TRUST_PROXY=1.
+  // In production behind a reverse proxy (Render, Railway, Netlify proxy), set TRUST_PROXY=1.
   if (process.env.TRUST_PROXY !== "1" && process.env.NODE_ENV === "production") {
     return req.headers.host?.trim() || undefined;
   }
