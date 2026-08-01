@@ -4,6 +4,8 @@ Source: `locales/vi.ts`
 Format: `"current phrase" → "recommendation"`  
 Legend: **OK** = keep as-is · **Tweak** = more natural / clearer · **Fix** = awkward, technical, or misleading
 
+**Status:** All Fix + Tweak recommendations below have been applied to `locales/vi.ts`.
+
 ---
 
 ## common
