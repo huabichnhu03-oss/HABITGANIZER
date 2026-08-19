@@ -1,8 +1,10 @@
 import React from "react";
 import { useGetWallet } from "@workspace/api-client-react";
 import { Coins, Drumstick, Droplet } from "lucide-react";
+import { useTranslation } from "@/i18n";
 
 export function CoinBadge({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const { data } = useGetWallet();
   const coins = data?.coins ?? 0;
   const food = data?.food ?? 0;
@@ -20,7 +22,7 @@ export function CoinBadge({ compact = false }: { compact?: boolean }) {
       <div
         data-testid="food-balance"
         className={`flex items-center gap-1 bg-pink-300 border-brutal-sm shadow-brutal-sm rounded-xl font-black ${sizing}`}
-        title="Food"
+        title={t("wallet.food")}
       >
         <Drumstick className="w-4 h-4 text-foreground" strokeWidth={3} />
         <span>{food}</span>
@@ -28,7 +30,7 @@ export function CoinBadge({ compact = false }: { compact?: boolean }) {
       <div
         data-testid="water-balance"
         className={`flex items-center gap-1 bg-blue-200 border-brutal-sm shadow-brutal-sm rounded-xl font-black ${sizing}`}
-        title="Water"
+        title={t("wallet.water")}
       >
         <Droplet className="w-4 h-4 fill-blue-500 text-foreground" strokeWidth={3} />
         <span>{water}</span>

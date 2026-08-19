@@ -11,8 +11,10 @@ import {
   userAchievementsTable,
   petsTable,
   userPetsTable,
+  habitsTable,
+  habitCompletionsTable,
 } from "@workspace/db";
-import { eq, and, asc, desc, gte, lte, isNull, or } from "drizzle-orm";
+import { eq, and, asc, desc, gte, isNull, or, sql, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -227,7 +229,7 @@ router.post("/coin-packs/checkout/:slug", financialRateLimit, async (req, res) =
     res.status(status).json({
       error:
         status === 503
-          ? "Coin purchases are temporarily unavailable (Stripe not configured)"
+          ? "Coin purchases are temporarily unavailable. Please try again later."
           : "Failed to start coin checkout",
     });
   }
@@ -418,7 +420,6 @@ router.get("/achievements", async (req, res) => {
 router.get("/stats/advanced", async (req, res) => {
   const walletId = req.walletId;
   try {
-    // Check if user has premium subscription
     const [sub] = await db
       .select()
       .from(userSubscriptionsTable)
@@ -430,7 +431,7 @@ router.get("/stats/advanced", async (req, res) => {
       );
 
     if (!sub) {
-      res.status(403).json({ error: "Advanced analytics require a premium subscription" });
+      res.status(403).json({ error: "Detailed stats require a premium subscription" });
       return;
     }
 
@@ -440,37 +441,129 @@ router.get("/stats/advanced", async (req, res) => {
       .where(eq(subscriptionPlansTable.slug, sub.planSlug));
 
     if (!plan?.advancedAnalytics) {
-      res.status(403).json({ error: "Your plan does not include advanced analytics" });
+      res.status(403).json({ error: "Your plan does not include detailed stats" });
       return;
     }
 
-    // Get comprehensive stats
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10);
 
-    // This would be expanded with actual analytics queries
-    // For now, return placeholder structure
+    const habits = await db
+      .select({ id: habitsTable.id })
+      .from(habitsTable)
+      .where(and(eq(habitsTable.walletId, walletId), isNull(habitsTable.archivedAt)));
+    const habitIds = habits.map((h) => h.id);
+
+    let totalCompletions = 0;
+    let completionRate = 0;
+    let averageMood: number | null = null;
+    let streakDays = 0;
+
+    if (habitIds.length > 0) {
+      const [completionRow] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(habitCompletionsTable)
+        .where(
+          and(
+            inArray(habitCompletionsTable.habitId, habitIds),
+            gte(habitCompletionsTable.completedDate, thirtyDaysAgoStr),
+          ),
+        );
+      totalCompletions = completionRow?.count ?? 0;
+
+      const possible = habitIds.length * 30;
+      completionRate = possible > 0 ? Math.min(1, totalCompletions / possible) : 0;
+
+      const moodRows = await db
+        .select({ mood: habitCompletionsTable.mood })
+        .from(habitCompletionsTable)
+        .where(
+          and(
+            inArray(habitCompletionsTable.habitId, habitIds),
+            gte(habitCompletionsTable.completedDate, thirtyDaysAgoStr),
+          ),
+        );
+      const moodScore: Record<string, number> = {
+        great: 5,
+        good: 4,
+        okay: 3,
+        meh: 2,
+        bad: 1,
+      };
+      const scored = moodRows
+        .map((r) => (r.mood ? moodScore[r.mood] : null))
+        .filter((n): n is number => n != null);
+      if (scored.length > 0) {
+        averageMood = scored.reduce((a, b) => a + b, 0) / scored.length;
+      }
+
+      // Approximate streak: consecutive calendar days (from today back) with ≥1 completion.
+      const todayStr = now.toISOString().slice(0, 10);
+      const recentDates = await db
+        .select({ completedDate: habitCompletionsTable.completedDate })
+        .from(habitCompletionsTable)
+        .where(inArray(habitCompletionsTable.habitId, habitIds));
+      const dateSet = new Set(recentDates.map((r) => r.completedDate));
+      let cursor = todayStr;
+      // If today has no completion yet, start from yesterday so a mid-day view doesn't zero the streak.
+      if (!dateSet.has(cursor)) {
+        const y = new Date(`${cursor}T12:00:00Z`);
+        y.setUTCDate(y.getUTCDate() - 1);
+        cursor = y.toISOString().slice(0, 10);
+      }
+      while (dateSet.has(cursor)) {
+        streakDays += 1;
+        const d = new Date(`${cursor}T12:00:00Z`);
+        d.setUTCDate(d.getUTCDate() - 1);
+        cursor = d.toISOString().slice(0, 10);
+      }
+    }
+
+    const userPets = await db
+      .select({
+        level: userPetsTable.level,
+        hunger: userPetsTable.hunger,
+      })
+      .from(userPetsTable)
+      .where(eq(userPetsTable.walletId, walletId));
+    const totalPets = userPets.length;
+    const averageLevel =
+      totalPets > 0 ? userPets.reduce((s, p) => s + (p.level ?? 1), 0) / totalPets : 0;
+
+    const [purchaseAgg] = await db
+      .select({
+        totalPurchases: sql<number>`count(*)::int`,
+        totalCoins: sql<number>`coalesce(sum(${coinPurchasesTable.coinsAwarded}), 0)::int`,
+      })
+      .from(coinPurchasesTable)
+      .where(
+        and(
+          eq(coinPurchasesTable.walletId, walletId),
+          eq(coinPurchasesTable.status, "completed"),
+        ),
+      );
+
     res.json({
       period: {
         start: thirtyDaysAgo.toISOString(),
         end: now.toISOString(),
       },
       habits: {
-        totalCompletions: 0, // Would query habit_completions
-        completionRate: 0,
-        averageMood: null,
-        streakDays: 0,
+        totalCompletions,
+        completionRate,
+        averageMood,
+        streakDays,
       },
       pets: {
-        totalPets: 0, // Would query user_pets
-        averageLevel: 0,
-        totalFeedings: 0,
+        totalPets,
+        averageLevel,
+        // Feedings are not stored as a ledger; surface care health instead.
+        wellCaredPets: userPets.filter((p) => (p.hunger ?? 0) >= 50).length,
       },
       economy: {
-        totalCoinsEarned: 0,
-        totalCoinsSpent: 0,
-        totalPurchases: 0,
+        totalCoinsFromPurchases: purchaseAgg?.totalCoins ?? 0,
+        totalPurchases: purchaseAgg?.totalPurchases ?? 0,
       },
     });
   } catch (err) {

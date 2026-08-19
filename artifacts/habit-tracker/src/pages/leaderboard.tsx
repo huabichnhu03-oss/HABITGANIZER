@@ -3,19 +3,10 @@ import { useGetLeaderboard } from "@workspace/api-client-react";
 import { Trophy, Medal, Crown, Globe, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
+import { toIntlLocale, useTranslation } from "@/i18n";
 
 type Scope = "friends" | "global";
 type Metric = "coins" | "completions";
-
-const SCOPE_OPTIONS: { value: Scope; label: string; icon: typeof Globe }[] = [
-  { value: "friends", label: "Friends", icon: Users },
-  { value: "global", label: "Global", icon: Globe },
-];
-
-const METRIC_OPTIONS: { value: Metric; label: string }[] = [
-  { value: "coins", label: "Coins" },
-  { value: "completions", label: "Completions" },
-];
 
 function rankIcon(rank: number) {
   if (rank === 1) return <Crown className="w-5 h-5 text-yellow-500 fill-yellow-500" />;
@@ -25,8 +16,19 @@ function rankIcon(rank: number) {
 }
 
 export function LeaderboardPage() {
+  const { t, locale } = useTranslation();
   const [scope, setScope] = useState<Scope>("friends");
   const [metric, setMetric] = useState<Metric>("coins");
+
+  const scopeOptions: { value: Scope; labelKey: string; icon: typeof Globe }[] = [
+    { value: "friends", labelKey: "ranks.friends", icon: Users },
+    { value: "global", labelKey: "ranks.global", icon: Globe },
+  ];
+
+  const metricOptions: { value: Metric; labelKey: string }[] = [
+    { value: "coins", labelKey: "ranks.coins" },
+    { value: "completions", labelKey: "ranks.completions" },
+  ];
 
   const leaderboardQuery = useGetLeaderboard(
     { scope, metric, limit: 50 },
@@ -42,7 +44,7 @@ export function LeaderboardPage() {
     return (
       <div className="space-y-8">
         <ApiQueryErrorBanner
-          title="Couldn't load leaderboard"
+          title={t("ranks.loadFailed")}
           onRetry={() => void leaderboardQuery.refetch()}
         />
       </div>
@@ -57,8 +59,8 @@ export function LeaderboardPage() {
       <header className="flex items-center gap-4">
         <Trophy className="w-10 h-10 fill-accent text-foreground drop-shadow-[2px_2px_0_rgba(0,0,0,1)] -rotate-6" />
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">Leaderboard</h1>
-          <p className="text-muted-foreground font-medium">See how you stack up</p>
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">{t("ranks.title")}</h1>
+          <p className="text-muted-foreground font-medium">{t("ranks.subtitle")}</p>
         </div>
       </header>
 
@@ -66,7 +68,7 @@ export function LeaderboardPage() {
       <div className="flex flex-wrap gap-3">
         {/* Scope toggle */}
         <div className="flex rounded-xl border-2 border-border overflow-hidden shadow-[2px_2px_0_hsl(var(--foreground))]">
-          {SCOPE_OPTIONS.map(opt => {
+          {scopeOptions.map(opt => {
             const Icon = opt.icon;
             const isActive = scope === opt.value;
             return (
@@ -80,7 +82,7 @@ export function LeaderboardPage() {
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             );
           })}
@@ -88,7 +90,7 @@ export function LeaderboardPage() {
 
         {/* Metric toggle */}
         <div className="flex rounded-xl border-2 border-border overflow-hidden shadow-[2px_2px_0_hsl(var(--foreground))]">
-          {METRIC_OPTIONS.map(opt => {
+          {metricOptions.map(opt => {
             const isActive = metric === opt.value;
             return (
               <button
@@ -100,7 +102,7 @@ export function LeaderboardPage() {
                     : "bg-card text-foreground hover:bg-muted"
                 }`}
               >
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             );
           })}
@@ -120,9 +122,7 @@ export function LeaderboardPage() {
             <div className="p-12 text-center">
               <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground font-medium">
-                {scope === "friends"
-                  ? "No friends on the leaderboard yet. Add some friends to compete!"
-                  : "No entries yet. Be the first!"}
+                {scope === "friends" ? t("ranks.emptyFriends") : t("ranks.emptyGlobal")}
               </p>
             </div>
           ) : (
@@ -141,19 +141,19 @@ export function LeaderboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-bold truncate ${entry.isSelf ? "text-foreground" : "text-foreground"}`}>
-                      {entry.displayName || "Unknown"}
+                      {entry.displayName || t("ranks.unknown")}
                       {entry.isSelf && (
-                        <span className="ml-2 text-xs font-bold text-accent uppercase">(You)</span>
+                        <span className="ml-2 text-xs font-bold text-accent uppercase">{t("ranks.you")}</span>
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono">{entry.friendCode}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-black text-foreground tabular-nums">
-                      {entry.score.toLocaleString()}
+                      {entry.score.toLocaleString(toIntlLocale(locale))}
                     </p>
                     <p className="text-xs text-muted-foreground font-medium uppercase">
-                      {metric === "coins" ? "coins" : "done"}
+                      {metric === "coins" ? t("ranks.coinsUnit") : t("ranks.doneUnit")}
                     </p>
                   </div>
                 </div>

@@ -4,10 +4,12 @@ import React from "react";
 import { Platform, View } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
+import { headingTextTransform, useTranslation } from "@/i18n";
 
 export default function TabLayout() {
   const colors = useColors();
   const isWeb = Platform.OS === "web";
+  const { t, locale } = useTranslation();
 
   return (
     <Tabs
@@ -21,7 +23,7 @@ export default function TabLayout() {
           fontFamily: "Inter_700Bold",
           fontSize: 11,
           marginTop: 2,
-          textTransform: "uppercase",
+          textTransform: headingTextTransform(locale),
           letterSpacing: 0.5,
         },
         tabBarStyle: {
@@ -43,7 +45,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Today",
+          title: t("nav.today"),
           tabBarIcon: ({ color }) => (
             <Feather name="check-circle" size={24} color={color} />
           ),
@@ -52,7 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="habits"
         options={{
-          title: "Habits",
+          title: t("nav.habits"),
           tabBarIcon: ({ color }) => (
             <Feather name="list" size={24} color={color} />
           ),
@@ -61,7 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="stats"
         options={{
-          title: "Stats",
+          title: t("nav.stats"),
           tabBarIcon: ({ color }) => (
             <Feather name="bar-chart-2" size={24} color={color} />
           ),
@@ -70,7 +72,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="health"
         options={{
-          title: "Health",
+          title: t("nav.health"),
           tabBarIcon: ({ color }) => (
             <Feather name="heart" size={24} color={color} />
           ),
@@ -79,7 +81,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="pups"
         options={{
-          title: "Pups",
+          title: t("nav.pups"),
           tabBarIcon: ({ color }) => (
             <Feather name="github" size={24} color={color} />
           ),
@@ -90,21 +92,21 @@ export default function TabLayout() {
         name="history"
         options={{
           href: null,
-          title: "History",
+          title: t("nav.history"),
         }}
       />
       <Tabs.Screen
         name="friends"
         options={{
           href: null,
-          title: "Friends",
+          title: t("nav.friends"),
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
           href: null,
-          title: "Ranks",
+          title: t("nav.ranks"),
         }}
       />
     </Tabs>

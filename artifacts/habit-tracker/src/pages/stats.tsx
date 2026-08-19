@@ -2,11 +2,12 @@ import React, { useMemo } from "react";
 import { useGetDashboard, useListHabits } from "@workspace/api-client-react";
 import { DynamicIcon, getHabitColor, getReadableForeground } from "@/components/icons";
 import { Flame, Trophy, Calendar, CheckCircle2, TrendingUp, Star } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
 import { CalendarOverviewSection } from "@/components/calendar-overview";
+import { useTranslation } from "@/i18n";
 
 export function StatsPage() {
+  const { t } = useTranslation();
   const dashboardQuery = useGetDashboard();
   const habitsQuery = useListHabits();
   const { data: dashboard } = dashboardQuery;
@@ -28,7 +29,7 @@ export function StatsPage() {
     return (
       <div className="space-y-8">
         <ApiQueryErrorBanner
-          title="Couldn’t load stats"
+          title={t("stats.loadFailed")}
           onRetry={() => {
             void dashboardQuery.refetch();
             void habitsQuery.refetch();
@@ -55,7 +56,7 @@ export function StatsPage() {
       <header className="flex items-center gap-4">
         <Star className="w-10 h-10 fill-accent text-foreground drop-shadow-[2px_2px_0_rgba(0,0,0,1)] -rotate-6" />
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">Stats & Flex</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">{t("stats.title")}</h1>
         </div>
       </header>
 
@@ -65,7 +66,7 @@ export function StatsPage() {
           <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white border-brutal-sm shadow-brutal-sm flex items-center justify-center mb-3 sm:mb-6">
             <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-foreground" strokeWidth={3} />
           </div>
-          <p className="text-xs sm:text-lg font-bold uppercase">Today</p>
+          <p className="text-xs sm:text-lg font-bold uppercase">{t("stats.today")}</p>
           <h2 className="text-2xl sm:text-5xl font-black">{Math.round(dashboard.todayCompletionRate * 100)}%</h2>
         </div>
 
@@ -73,10 +74,10 @@ export function StatsPage() {
           <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white border-brutal-sm shadow-brutal-sm flex items-center justify-center mb-3 sm:mb-6">
             <Flame className="w-5 h-5 sm:w-8 sm:h-8 fill-orange-500 text-orange-500" strokeWidth={3} />
           </div>
-          <p className="text-xs sm:text-lg font-bold uppercase">Best Streak</p>
+          <p className="text-xs sm:text-lg font-bold uppercase">{t("stats.bestStreak")}</p>
           <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
             <h2 className="text-2xl sm:text-5xl font-black">{dashboard.longestActiveStreak}</h2>
-            <span className="text-xs sm:text-xl font-bold">days</span>
+            <span className="text-xs sm:text-xl font-bold">{t("stats.days")}</span>
           </div>
         </div>
 
@@ -84,7 +85,7 @@ export function StatsPage() {
           <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white border-brutal-sm shadow-brutal-sm flex items-center justify-center mb-3 sm:mb-6">
             <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-foreground" strokeWidth={3} />
           </div>
-          <p className="text-xs sm:text-lg font-bold uppercase">Weekly Avg</p>
+          <p className="text-xs sm:text-lg font-bold uppercase">{t("stats.weeklyAvg")}</p>
           <h2 className="text-2xl sm:text-5xl font-black">{Math.round(dashboard.weeklyCompletionRate * 100)}%</h2>
         </div>
 
@@ -92,7 +93,7 @@ export function StatsPage() {
           <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-accent border-brutal-sm shadow-brutal-sm flex items-center justify-center mb-3 sm:mb-6">
             <Trophy className="w-5 h-5 sm:w-8 sm:h-8 text-foreground" strokeWidth={3} />
           </div>
-          <p className="text-xs sm:text-lg font-bold uppercase">Total Habits</p>
+          <p className="text-xs sm:text-lg font-bold uppercase">{t("stats.totalHabits")}</p>
           <h2 className="text-2xl sm:text-5xl font-black">{dashboard.totalHabits}</h2>
         </div>
       </div>
@@ -100,22 +101,22 @@ export function StatsPage() {
       {/* Habit Breakdown */}
       <div>
         <h2 className="text-3xl font-black uppercase tracking-tight mb-6 flex items-center gap-3">
-          <TrendingUp className="w-8 h-8 text-foreground" strokeWidth={3} /> Scoreboard
+          <TrendingUp className="w-8 h-8 text-foreground" strokeWidth={3} /> {t("stats.scoreboard")}
         </h2>
         <div className="brutal-card bg-white overflow-x-auto p-0 max-w-full">
           <table className="w-full min-w-[20rem] sm:min-w-0 text-left border-collapse">
             <thead className="bg-foreground text-white border-b-brutal">
               <tr>
-                <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base">Habit</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base">{t("stats.habit")}</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base whitespace-nowrap">
-                  <span className="sm:hidden">Strk</span>
-                  <span className="hidden sm:inline">Streak</span>
+                  <span className="sm:hidden">{t("stats.streakShort")}</span>
+                  <span className="hidden sm:inline">{t("stats.streak")}</span>
                 </th>
-                <th className="px-3 sm:px-6 py-5 font-black uppercase tracking-widest hidden sm:table-cell whitespace-nowrap">Best</th>
-                <th className="px-3 sm:px-6 py-5 font-black uppercase tracking-widest hidden md:table-cell whitespace-nowrap">Total Done</th>
+                <th className="px-3 sm:px-6 py-5 font-black uppercase tracking-widest hidden sm:table-cell whitespace-nowrap">{t("stats.best")}</th>
+                <th className="px-3 sm:px-6 py-5 font-black uppercase tracking-widest hidden md:table-cell whitespace-nowrap">{t("stats.totalDone")}</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-5 font-black uppercase tracking-tight sm:tracking-widest text-xs sm:text-base text-right whitespace-nowrap">
-                  <span className="sm:hidden">Wk</span>
-                  <span className="hidden sm:inline">Weekly</span>
+                  <span className="sm:hidden">{t("stats.weeklyShort")}</span>
+                  <span className="hidden sm:inline">{t("stats.weekly")}</span>
                 </th>
               </tr>
             </thead>
@@ -159,7 +160,7 @@ export function StatsPage() {
               })}
               {habitRows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-xl font-bold">No habits created yet.</td>
+                  <td colSpan={5} className="px-6 py-12 text-center text-xl font-bold">{t("stats.empty")}</td>
                 </tr>
               )}
             </tbody>

@@ -14,6 +14,7 @@ import {
 import { useUser } from "@clerk/react";
 import { Check, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 
 const LEGACY_STORAGE_PREFIX = "habiganize:grocery_v1";
 
@@ -62,6 +63,7 @@ function sortForDisplay(items: GroceryItem[]): GroceryItem[] {
 }
 
 export function GroceryList() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useUser();
   const userId = user?.id;
@@ -179,10 +181,10 @@ export function GroceryList() {
       >
         <div className="flex items-center gap-2 min-w-0">
           <ShoppingCart className="w-4 h-4 shrink-0" strokeWidth={2.5} />
-          <span className="text-sm font-black uppercase tracking-tight">Grocery list</span>
+          <span className="text-sm font-black uppercase tracking-tight">{t("grocery.title")}</span>
           {items.length > 0 && (
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-accent border-brutal-sm">
-              {unchecked.length} left
+              {t("grocery.left", { n: unchecked.length })}
             </span>
           )}
         </div>
@@ -194,9 +196,9 @@ export function GroceryList() {
           {isError && (
             <div className="text-xs font-bold text-destructive text-center space-y-1">
               <p>
-                Couldn’t sync list.{" "}
+                {t("grocery.syncFailed")}{" "}
                 <button type="button" onClick={() => refetch()} className="underline">
-                  Retry
+                  {t("common.retry")}
                 </button>
               </p>
               {syncErrorDetail ? (
@@ -213,7 +215,7 @@ export function GroceryList() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") addItem();
               }}
-              placeholder="Add milk, eggs, bread…"
+              placeholder={t("grocery.placeholder")}
               maxLength={80}
               disabled={busy}
               data-testid="grocery-input"
@@ -225,17 +227,17 @@ export function GroceryList() {
               disabled={!draft.trim() || busy}
               data-testid="grocery-add"
               className="shrink-0 px-3 py-2 border-brutal-sm rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
-              aria-label="Add item"
+              aria-label={t("grocery.addItem")}
             >
               <Plus className="w-4 h-4" strokeWidth={3} />
             </button>
           </div>
 
           {isLoading ? (
-            <p className="text-xs font-bold text-muted-foreground text-center py-3">Loading…</p>
+            <p className="text-xs font-bold text-muted-foreground text-center py-3">{t("common.loading")}</p>
           ) : ordered.length === 0 ? (
             <p className="text-xs font-bold text-muted-foreground text-center py-3">
-              Stick to your list. Add items before you shop.
+              {t("grocery.emptyHint")}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -256,7 +258,7 @@ export function GroceryList() {
                       "shrink-0 w-6 h-6 rounded-md border-brutal-sm flex items-center justify-center transition-colors",
                       item.checked ? "bg-primary text-white" : "bg-white hover:bg-accent/50",
                     )}
-                    aria-label={item.checked ? "Uncheck" : "Check off"}
+                    aria-label={item.checked ? t("grocery.uncheck") : t("grocery.checkOff")}
                   >
                     {item.checked && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
                   </button>
@@ -273,7 +275,7 @@ export function GroceryList() {
                     onClick={() => removeItem(item.id)}
                     disabled={busy}
                     className="shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-destructive transition-opacity disabled:opacity-30"
-                    aria-label="Remove"
+                    aria-label={t("grocery.remove")}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -291,7 +293,7 @@ export function GroceryList() {
               className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground mx-auto pt-1 disabled:opacity-40"
             >
               <Trash2 className="w-3 h-3" />
-              Clear checked ({checked.length})
+              {t("grocery.clearChecked", { n: checked.length })}
             </button>
           )}
         </div>

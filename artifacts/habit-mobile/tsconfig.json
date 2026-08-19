@@ -12,6 +12,7 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "../habit-tracker/src/i18n/**/*.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]

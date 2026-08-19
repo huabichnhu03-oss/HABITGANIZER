@@ -16,6 +16,7 @@ import {
   markFeedbackPromptShown,
   shouldShowFeedbackPrompt,
 } from "@/lib/feedback-prompt-storage";
+import { useTranslation } from "@/i18n";
 
 const SHOW_DELAY_MS = 2500;
 
@@ -25,6 +26,7 @@ const SHOW_DELAY_MS = 2500;
 export function FeedbackPrompt() {
   const { user, isLoaded } = useUser();
   const { openFeedback } = useFeedbackDialog();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -65,10 +67,10 @@ export function FeedbackPrompt() {
         <DialogHeader className="text-left gap-2">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
             <MessageSquareHeart className="w-8 h-8 text-primary" strokeWidth={2.5} />
-            Got a minute?
+            {t("feedback.promptTitle")}
           </DialogTitle>
           <DialogDescription className="text-base font-semibold text-foreground">
-            How’s Habiganize working for you? A quick note helps us shape what’s next.
+            {t("feedback.promptBody")}
           </DialogDescription>
         </DialogHeader>
 
@@ -79,7 +81,7 @@ export function FeedbackPrompt() {
             onClick={dismiss}
             data-testid="feedback-prompt-later"
           >
-            Not now
+            {t("feedback.notNow")}
           </button>
           <Button
             type="button"
@@ -87,7 +89,7 @@ export function FeedbackPrompt() {
             className="uppercase font-black border-2 border-foreground rounded-xl shadow-[4px_4px_0_#141414] active:translate-y-px active:shadow-none grow sm:grow-0"
             onClick={giveFeedback}
           >
-            Send feedback
+            {t("feedback.send")}
           </Button>
         </DialogFooter>
       </DialogContent>

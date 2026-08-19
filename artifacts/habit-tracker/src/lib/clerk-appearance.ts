@@ -20,7 +20,7 @@ export function createClerkAppearance(basePath: string) {
       colorInput: "#ffffff",
       colorInputForeground: "#3a2f26",
       colorNeutral: "#3a2f26",
-      fontFamily: "Outfit, sans-serif",
+      fontFamily: '"Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif',
       borderRadius: "0.75rem",
     },
     elements: {

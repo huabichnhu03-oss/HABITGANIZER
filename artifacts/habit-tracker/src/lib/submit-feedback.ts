@@ -7,11 +7,13 @@ export async function submitFeedback(input: {
   rating?: number | null;
   source: FeedbackSource;
   platform?: "web" | "ios" | "android";
+  /** Localized empty-input error; defaults to English. */
+  emptyError?: string;
 }): Promise<void> {
   const message = input.message.trim();
   const rating = input.rating ?? null;
   if (!message && rating == null) {
-    throw new Error("Please include a message or a rating.");
+    throw new Error(input.emptyError ?? "Please include a message or a rating.");
   }
 
   await customFetch("/api/feedback", {

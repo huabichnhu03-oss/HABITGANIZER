@@ -3,6 +3,7 @@ import { useGetHistory } from "@workspace/api-client-react";
 import { DynamicIcon, getHabitColor, getReadableForeground } from "@/components/icons";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, History as HistoryIcon } from "lucide-react";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
+import { toIntlLocale, useTranslation, type Locale } from "@/i18n";
 
 const MOOD_EMOJI: Record<string, string> = {
   great: "😀",
@@ -12,15 +13,6 @@ const MOOD_EMOJI: Record<string, string> = {
   bad: "😞",
 };
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-function formatYM(year: number, month: number): string {
-  return `${MONTH_NAMES[month - 1]} ${year}`;
-}
-
 function ymKey(year: number, month: number): number {
   return year * 12 + (month - 1);
 }
@@ -29,12 +21,17 @@ function fromYmKey(k: number): { year: number; month: number } {
   return { year: Math.floor(k / 12), month: (k % 12) + 1 };
 }
 
-function dayLabel(dateStr: string): string {
+function dayLabel(dateStr: string, locale: Locale): string {
   const d = new Date(`${dateStr}T00:00:00`);
-  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleDateString(toIntlLocale(locale), {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export function HistoryPage() {
+  const { t, locale } = useTranslation();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -71,14 +68,16 @@ export function HistoryPage() {
     [data],
   );
 
+  const monthLabel = `${t(`months.${month}`)} ${year}`;
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header className="flex items-center gap-4">
         <HistoryIcon className="w-10 h-10 text-foreground -rotate-6" strokeWidth={3} />
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">History</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">{t("history.title")}</h1>
           <p className="text-base font-bold text-muted-foreground uppercase tracking-wide">
-            Look back on your check-offs
+            {t("history.subtitle")}
           </p>
         </div>
       </header>
@@ -89,7 +88,7 @@ export function HistoryPage() {
           onClick={goPrev}
           disabled={!canGoBack}
           data-testid="history-prev-month"
-          aria-label="Previous month"
+          aria-label={t("history.prevMonth")}
           className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl border-brutal-sm shadow-brutal-sm bg-white hover:bg-muted active:translate-y-0.5 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:translate-y-0"
         >
           <ChevronLeft className="w-7 h-7" strokeWidth={3} />
@@ -100,7 +99,7 @@ export function HistoryPage() {
             data-testid="history-month-label"
             className="text-2xl sm:text-3xl font-black uppercase tracking-tight truncate"
           >
-            {formatYM(year, month)}
+            {monthLabel}
           </h2>
         </div>
         <button
@@ -108,7 +107,7 @@ export function HistoryPage() {
           onClick={goNext}
           disabled={!canGoForward}
           data-testid="history-next-month"
-          aria-label="Next month"
+          aria-label={t("history.nextMonth")}
           className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl border-brutal-sm shadow-brutal-sm bg-white hover:bg-muted active:translate-y-0.5 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:translate-y-0"
         >
           <ChevronRight className="w-7 h-7" strokeWidth={3} />
@@ -116,7 +115,7 @@ export function HistoryPage() {
       </div>
 
       {isError ? (
-        <ApiQueryErrorBanner title="Couldn’t load history" onRetry={() => refetch()} />
+        <ApiQueryErrorBanner title={t("history.loadFailed")} onRetry={() => refetch()} />
       ) : isLoading || !data ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -129,9 +128,9 @@ export function HistoryPage() {
           className="brutal-card bg-muted text-center py-16 px-6"
         >
           <CalendarIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" strokeWidth={2.5} />
-          <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Nothing logged this month</h3>
+          <h3 className="text-2xl font-black uppercase tracking-tight mb-2">{t("history.emptyTitle")}</h3>
           <p className="text-base font-bold text-muted-foreground">
-            Pick a different month or come back after you check things off.
+            {t("history.emptyHint")}
           </p>
         </div>
       ) : (
@@ -158,7 +157,8 @@ export function HistoryPage() {
                         {habit.name}
                       </h3>
                       <p className="text-sm font-bold text-muted-foreground">
-                        {habit.completions.length} {habit.completions.length === 1 ? "day" : "days"}
+                        {habit.completions.length}{" "}
+                        {habit.completions.length === 1 ? t("history.day") : t("history.days")}
                       </p>
                     </div>
                   </div>
@@ -173,7 +173,7 @@ export function HistoryPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-black uppercase text-sm tracking-wide">
-                            {dayLabel(c.completedDate)}
+                            {dayLabel(c.completedDate, locale)}
                           </div>
                           {c.note ? (
                             <p className="mt-1 text-sm font-medium text-foreground/80 break-words whitespace-pre-wrap">

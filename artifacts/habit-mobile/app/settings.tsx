@@ -17,13 +17,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrutalCard } from "@/components/BrutalCard";
 import { FeedbackSheet } from "@/components/FeedbackSheet";
+import { LanguageSelect } from "@/components/LanguageSelect";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/i18n";
 import { requestAppRating } from "@/lib/request-app-rating";
 
 type ManageLink = {
   href: "/(tabs)/friends" | "/(tabs)/history" | "/(tabs)/leaderboard";
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: React.ComponentProps<typeof Feather>["name"];
   testId: string;
 };
@@ -31,22 +33,22 @@ type ManageLink = {
 const MANAGE_LINKS: ManageLink[] = [
   {
     href: "/(tabs)/friends",
-    label: "Friends",
-    description: "Friend code, requests, and your circle",
+    labelKey: "nav.friends",
+    descriptionKey: "settings.friendsDesc",
     icon: "users",
     testId: "settings-link-friends",
   },
   {
     href: "/(tabs)/history",
-    label: "History",
-    description: "Past completions and calendar",
+    labelKey: "nav.history",
+    descriptionKey: "settings.historyDesc",
     icon: "clock",
     testId: "settings-link-history",
   },
   {
     href: "/(tabs)/leaderboard",
-    label: "Ranks",
-    description: "Friends and global leaderboards",
+    labelKey: "nav.ranks",
+    descriptionKey: "settings.ranksDesc",
     icon: "award",
     testId: "settings-link-ranks",
   },
@@ -57,6 +59,7 @@ type MetaShape = Record<string, unknown>;
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const isWeb = Platform.OS === "web";
   const { signOut } = useClerk();
   const { user } = useUser();
@@ -86,10 +89,10 @@ export default function SettingsScreen() {
     null;
 
   const confirmSignOut = () => {
-    Alert.alert("Sign out?", "You can log back in anytime.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(`${t("common.signOut")}?`, undefined, [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Sign out",
+        text: t("common.signOut"),
         style: "destructive",
         onPress: () => {
           void signOut();
@@ -143,7 +146,7 @@ export default function SettingsScreen() {
         >
           <Feather name="arrow-left" size={18} color={colors.foreground} />
         </Pressable>
-        <Text style={[styles.appBarTitle, { color: colors.foreground }]}>Settings</Text>
+        <Text style={[styles.appBarTitle, { color: colors.foreground }]}>{t("settings.title")}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -154,11 +157,15 @@ export default function SettingsScreen() {
         ]}
         alwaysBounceVertical={false}
       >
+        <View style={{ marginBottom: 20 }}>
+          <LanguageSelect />
+        </View>
+
         <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-          Manage
+          {t("settings.tabManage")}
         </Text>
         <Text style={[styles.sectionHint, { color: colors.mutedForeground }]}>
-          Friends and other tools live here so they’re easy to find on mobile.
+          {t("settings.manageIntro")}
         </Text>
 
         <View style={styles.linkList}>
@@ -185,9 +192,9 @@ export default function SettingsScreen() {
                 <Feather name={item.icon} size={20} color={colors.foreground} />
               </View>
               <View style={styles.linkText}>
-                <Text style={[styles.linkLabel, { color: colors.foreground }]}>{item.label}</Text>
+                <Text style={[styles.linkLabel, { color: colors.foreground }]}>{t(item.labelKey)}</Text>
                 <Text style={[styles.linkDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
-                  {item.description}
+                  {t(item.descriptionKey)}
                 </Text>
               </View>
               <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
@@ -371,7 +378,7 @@ export default function SettingsScreen() {
           ]}
         >
           <Feather name="log-out" size={16} color={colors.foreground} />
-          <Text style={[styles.signOutText, { color: colors.foreground }]}>Sign out</Text>
+          <Text style={[styles.signOutText, { color: colors.foreground }]}>{t("common.signOut")}</Text>
         </Pressable>
       </ScrollView>
 

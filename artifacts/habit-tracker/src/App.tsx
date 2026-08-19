@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, SignIn, SignUp, Show, useAuth, useClerk } from "@clerk/react";
@@ -13,6 +13,7 @@ import { ServerWakeScreen } from "@/components/server-wake-screen";
 import { useServerReady } from "@/hooks/use-server-ready";
 import { createClerkAppearance } from "@/lib/clerk-appearance";
 import { initializeRewardedAdsWeb } from "@/lib/rewarded-ad-web";
+import { LanguageSelect } from "@/components/language-select";
 import { I18nProvider, useTranslation } from "@/i18n";
 
 // Resolve publishable key from hostname so the same build can serve multiple
@@ -86,6 +87,12 @@ function LegalFooterLinks() {
       <span className="mx-2" aria-hidden>
         ·
       </span>
+      <a className="font-bold text-foreground underline" href={`${basePath}/terms`}>
+        {t("common.terms")}
+      </a>
+      <span className="mx-2" aria-hidden>
+        ·
+      </span>
       <a className="font-bold text-foreground underline" href={`${basePath}/support`}>
         {t("common.support")}
       </a>
@@ -93,21 +100,31 @@ function LegalFooterLinks() {
   );
 }
 
-function SignInPage() {
+function AuthChrome({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-12">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <div className="mb-4 w-full max-w-[440px]">
+        <LanguageSelect id="auth-language-select" />
+      </div>
+      {children}
       <LegalFooterLinks />
     </div>
   );
 }
 
+function SignInPage() {
+  return (
+    <AuthChrome>
+      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    </AuthChrome>
+  );
+}
+
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-12">
+    <AuthChrome>
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-      <LegalFooterLinks />
-    </div>
+    </AuthChrome>
   );
 }
 
@@ -115,13 +132,18 @@ function SignUpPage() {
 function WelcomePage() {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
+  const features = [
+    t("welcome.featureHabits"),
+    t("welcome.featurePups"),
+    t("welcome.featureStats"),
+  ] as const;
   return (
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-background to-accent px-4">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-background to-accent px-4 py-10">
       <div
         className="pointer-events-none absolute -top-32 left-1/2 h-56 w-[28rem] max-w-[100vw] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"
         aria-hidden
       />
-      <div className="relative w-full max-w-sm rounded-2xl border-4 border-border bg-card shadow-[6px_6px_0_hsl(var(--foreground))] overflow-hidden">
+      <div className="relative w-full max-w-md rounded-2xl border-4 border-border bg-card shadow-[6px_6px_0_hsl(var(--foreground))] overflow-hidden">
         <div className="bg-gradient-to-r from-primary to-[hsl(285_62%_68%)] px-6 py-5 flex items-center gap-3">
           <span className="text-3xl" aria-hidden>
             ✨
@@ -131,7 +153,27 @@ function WelcomePage() {
             <p className="text-white/80 text-sm font-medium">{t("welcome.tagline")}</p>
           </div>
         </div>
-        <div className="p-6 flex flex-col gap-3">
+        <div className="p-6 flex flex-col gap-4">
+          <LanguageSelect id="welcome-language-select" />
+          <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+            {t("welcome.subtitle")}
+          </p>
+          <ul className="space-y-2">
+            {features.map((label) => (
+              <li
+                key={label}
+                className="flex items-start gap-2 text-sm font-semibold text-foreground"
+              >
+                <span
+                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-border bg-secondary text-xs"
+                  aria-hidden
+                >
+                  ✓
+                </span>
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
           <button
             onClick={() => setLocation("/sign-up")}
             className="w-full rounded-xl border-3 border-border bg-primary py-3 font-black uppercase tracking-wider text-white shadow-[3px_3px_0_hsl(var(--foreground))] active:translate-y-px active:shadow-none transition-all"

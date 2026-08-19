@@ -1,4 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("/fonts/BeVietnamPro-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("/fonts/BeVietnamPro-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("/fonts/BeVietnamPro-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("/fonts/BeVietnamPro-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("/fonts/BeVietnamPro-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  src: url("/fonts/BeVietnamPro-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -65,6 +107,7 @@
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
     font-weight: 600;
+    font-synthesis: none;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -108,9 +151,9 @@
   --sidebar-foreground: 30 26% 20%;
   --sidebar-border: 30 20% 34%;
 
-  --app-font-sans: 'Outfit', sans-serif;
-  --app-font-serif: 'Outfit', sans-serif;
-  --app-font-mono: monospace;
+  --app-font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --app-font-serif: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --app-font-mono: ui-monospace, monospace;
   --radius: 1.5rem; /* chunky rounded */
 }
 
@@ -215,4 +258,11 @@
 
 .scrollbar-visible::-webkit-scrollbar-corner {
   background: hsl(var(--background));
+}
+
+/* Unlayered so it wins over Tailwind's `.uppercase` utility.
+   Vietnamese all-caps often misses precomposed glyphs (Ấ, Ắ, …) and forces a thin fallback. */
+html[lang="vi"] .uppercase {
+  text-transform: none;
+  letter-spacing: 0.01em;
 }

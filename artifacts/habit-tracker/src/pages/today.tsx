@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { enUS, vi as viLocale } from "date-fns/locale";
+import { enUS, fr as frLocale, vi as viLocale } from "date-fns/locale";
 import {
   useListHabits,
   useCompleteHabit,
@@ -62,12 +62,12 @@ export function TodayPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t, locale } = useTranslation();
-  const dateFnsLocale = locale === "vi" ? viLocale : enUS;
+  const dateFnsLocale = locale === "vi" ? viLocale : locale === "fr" ? frLocale : enUS;
   const todayWeekday = useMemo(() => format(new Date(), "EEE").toLowerCase(), []);
   const dateLabels = useMemo(
     () => ({
       weekday: format(new Date(), "EEEE", { locale: dateFnsLocale }),
-      pretty: format(new Date(), locale === "vi" ? "d MMMM, yyyy" : "MMMM do, yyyy", {
+      pretty: format(new Date(), locale === "en" ? "MMMM do, yyyy" : "d MMMM yyyy", {
         locale: dateFnsLocale,
       }),
     }),

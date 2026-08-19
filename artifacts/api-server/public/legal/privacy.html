@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Privacy Policy | HabitPup</title>
+  <title>Privacy Policy | Habiganize</title>
   <style>
     :root { color-scheme: light; }
     body {
@@ -21,55 +21,72 @@
     p, li { margin: 0.75rem 0; }
     ul { padding-left: 1.25rem; }
     .muted { color: #4d4d4d; font-size: 0.9rem; }
+    .nav { margin-top: 2rem; font-size: 0.9rem; }
+    .nav a { margin-right: 0.75rem; }
   </style>
 </head>
 <body>
-  <h1>HabitPup Privacy Policy</h1>
-  <p class="muted">Last updated: May 2026</p>
+  <h1>Habiganize Privacy Policy</h1>
+  <p class="muted">Last updated: August 2026</p>
 
   <p>
-    HabitPup (&ldquo;we&rdquo;, &ldquo;our app&rdquo;) helps you build habits alongside a companion experience.
-    This policy describes what we process when you use the service.
+    Habiganize (&ldquo;we&rdquo;, &ldquo;our service&rdquo;) is a habit-building app with companion pets,
+    available at <a href="https://habitganizer.tech">habitganizer.tech</a> and in our mobile apps.
+    This policy explains what personal data we process when you use Habiganize.
+  </p>
+
+  <h2>Who we are</h2>
+  <p>
+    Habiganize is operated as a consumer web and mobile product.
+    For privacy requests, contact us via the <a href="/support">support</a> page.
   </p>
 
   <h2>Authentication</h2>
   <p>
     Sign-in and account management are handled by <strong>Clerk</strong> (clerk.com), an authentication provider.
-    Clerk processes identifiers such as email address and related account metadata according to their own privacy policy.
+    Clerk processes identifiers such as email address and related account metadata according to
+    <a href="https://clerk.com/legal/privacy" rel="noopener noreferrer">Clerk&rsquo;s privacy policy</a>.
   </p>
 
   <h2>Data we process</h2>
   <ul>
-    <li><strong>Account information:</strong> Provided through Clerk for sign-in.</li>
-    <li><strong>Habit data:</strong> The habits you create, schedules, completions, and related timestamps.</li>
+    <li><strong>Account information:</strong> Provided through Clerk for sign-in (for example email and profile fields you choose to share).</li>
+    <li><strong>Habit data:</strong> Habits you create, schedules, completions, moods, notes, and related timestamps.</li>
     <li><strong>Companion / rewards state:</strong> In-app progression tied to your account (for example coins, pets, care actions).</li>
+    <li><strong>Health &amp; grocery (optional):</strong> Entries you add in those features, if you use them.</li>
     <li><strong>Device notifications:</strong> If you opt in on mobile, reminders may use platform notification services.</li>
+    <li><strong>Payments:</strong> If you purchase coins, donate, or subscribe, payment processors (such as Stripe or Clerk Billing) handle card details; we receive confirmation and entitlement data, not full card numbers.</li>
+    <li><strong>Feedback:</strong> Messages you send through in-app feedback.</li>
   </ul>
 
   <h2>How we use it</h2>
   <p>
-    To operate core app features (sync habits, dashboards, reminders, companion rewards),
-    enforce security and abuse prevention where applicable,
-    and meet legal obligations where required.
-    We do not sell your personal data.
+    To operate Habiganize (sync habits, dashboards, reminders, companions, social features you enable),
+    process purchases and subscriptions you request, prevent abuse, improve reliability,
+    and meet legal obligations where required. We do not sell your personal data.
   </p>
 
   <h2>Hosting and security</h2>
   <p>
-    Application data is stored on infrastructure you choose when self-hosting or deploying this product
-    (for example managed PostgreSQL and a Node/API host).
-   Traffic between the app and the API should use HTTPS; configure your deployment accordingly.
+    Habiganize application data is stored on managed cloud infrastructure (including a PostgreSQL database and our API host).
+    Traffic between the app and our API uses HTTPS.
   </p>
 
   <h2>Retention and deletion</h2>
   <p>
     Data is retained while your account remains active unless you delete it through product features or contact support.
-    You may delete your Clerk account according to Clerk&rsquo;s tools; downstream application data deletion may require a separate operator request depending on deployment.
+    You may delete your Clerk account using Clerk&rsquo;s account tools; to request deletion of Habiganize application data,
+    contact us through <a href="/support">support</a>.
   </p>
 
   <h2>Contact</h2>
   <p>
-    For privacy requests, reach the operator of this deployment via the contact on the <a href="/support">support</a> page.
+    For privacy requests, see our <a href="/support">support</a> page.
+  </p>
+
+  <p class="nav">
+    <a href="/terms">Terms of Service</a>
+    <a href="/support">Support</a>
   </p>
 </body>
 </html>

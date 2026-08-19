@@ -29,7 +29,7 @@ body {
   width: 360px;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Outfit", system-ui, -apple-system, sans-serif;
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
   font-weight: 600;
 }
 
@@ -71,7 +71,7 @@ body {
 }
 
 .brand-name {
-  font-family: "Outfit", sans-serif;
+  font-family: "Be Vietnam Pro", sans-serif;
   font-weight: 900;
   font-size: 18px;
   letter-spacing: -0.3px;
@@ -302,7 +302,7 @@ body {
 }
 
 .btn {
-  font-family: "Outfit", sans-serif;
+  font-family: "Be Vietnam Pro", sans-serif;
   font-weight: 900;
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -360,7 +360,7 @@ body {
 }
 
 #api-url-input {
-  font-family: "Outfit", sans-serif;
+  font-family: "Be Vietnam Pro", sans-serif;
   font-weight: 600;
   font-size: 14px;
   padding: 12px 14px;

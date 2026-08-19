@@ -38,13 +38,18 @@ function escapeHtml(s: string): string {
 }
 
 function sendSupportPage(_req: Request, res: Response, _next: NextFunction): void {
-  const supportEmail = escapeHtml(process.env.SUPPORT_CONTACT_EMAIL?.trim() || "support@example.com");
+  const rawEmail = process.env.SUPPORT_CONTACT_EMAIL?.trim();
+  const supportEmail = rawEmail ? escapeHtml(rawEmail) : null;
+  const contactBlock = supportEmail
+    ? `<p><a href="mailto:${supportEmail}">${supportEmail}</a></p>
+    <p class="muted">We usually reply within a few business days. For account access issues, include the email on your Habiganize account.</p>`
+    : `<p>Use <strong>Send feedback</strong> inside the Habiganize app (Settings), or reach us through the contact options listed when you sign in.</p>`;
   const body = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Support | HabitPup</title>
+  <title>Support | Habiganize</title>
   <style>
     :root { color-scheme: light; }
     body {
@@ -67,16 +72,20 @@ function sendSupportPage(_req: Request, res: Response, _next: NextFunction): voi
       margin-top: 1.25rem;
     }
     .muted { color: #4d4d4d; font-size: 0.9rem; }
+    .nav { margin-top: 1.5rem; font-size: 0.9rem; }
+    .nav a { margin-right: 0.75rem; }
   </style>
 </head>
 <body>
-  <h1>HabitPup Support</h1>
-  <p>For help, billing questions, or privacy requests, contact:</p>
+  <h1>Habiganize Support</h1>
+  <p>For help, billing questions, or privacy requests, contact us:</p>
   <div class="card">
-    <p><a href="mailto:${supportEmail}">${supportEmail}</a></p>
-    <p class="muted">Set <code>SUPPORT_CONTACT_EMAIL</code> on the API server to replace this address in production.</p>
+    ${contactBlock}
   </div>
-  <p><a href="/privacy">Privacy policy</a></p>
+  <p class="nav">
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+  </p>
 </body>
 </html>`;
   res.status(200).type("html").send(body);
@@ -180,8 +189,9 @@ app.use(
 app.use("/api/assets", express.static(publicDir, { maxAge: "1d", fallthrough: true }));
 app.use("/api", router);
 
-// Public URLs for store submissions (Google Play / App Store) — work with or without SPA build.
+// Public URLs for store submissions / Ads landing — work with or without SPA build.
 app.get("/privacy", sendLegalPage("privacy.html"));
+app.get("/terms", sendLegalPage("terms.html"));
 app.get("/support", sendSupportPage);
 
 // In production, serve the built web app at the root path.

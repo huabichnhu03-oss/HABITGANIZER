@@ -25,6 +25,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 const METRIC_ORDER: HealthMetric[] = ["steps", "kcal", "sleep", "standups", "heart_rate"];
@@ -50,8 +51,8 @@ type MetricDetail = {
 };
 
 type MetricMeta = {
-  label: string;
-  short: string;
+  labelKey: string;
+  shortKey: string;
   unit: string;
   inputStep: number;
   bg: string;
@@ -59,7 +60,7 @@ type MetricMeta = {
   detail: MetricDetail;
   Icon: React.ComponentType<{ className?: string; strokeWidth?: number; fill?: string }>;
   formatValue: (n: number) => string;
-  goalLabel: string;
+  goalLabelKey: string;
   goalUnit: string;
   defaultGoal: number;
   isLatest?: boolean;
@@ -67,8 +68,8 @@ type MetricMeta = {
 
 const META: Record<HealthMetric, MetricMeta> = {
   steps: {
-    label: "Steps",
-    short: "Steps",
+    labelKey: "health.steps",
+    shortKey: "health.stepsShort",
     unit: "steps",
     inputStep: 1,
     bg: "bg-primary",
@@ -88,13 +89,13 @@ const META: Record<HealthMetric, MetricMeta> = {
     },
     Icon: Activity,
     formatValue: (n) => Math.round(n).toLocaleString(),
-    goalLabel: "Daily steps goal",
+    goalLabelKey: "health.stepsGoal",
     goalUnit: "steps",
     defaultGoal: 10000,
   },
   kcal: {
-    label: "Active Calories",
-    short: "kcal",
+    labelKey: "health.calories",
+    shortKey: "kcal",
     unit: "kcal",
     inputStep: 1,
     bg: "bg-secondary",
@@ -113,13 +114,13 @@ const META: Record<HealthMetric, MetricMeta> = {
     },
     Icon: Flame,
     formatValue: (n) => Math.round(n).toLocaleString(),
-    goalLabel: "Daily kcal goal",
+    goalLabelKey: "health.caloriesGoal",
     goalUnit: "kcal",
     defaultGoal: 500,
   },
   sleep: {
-    label: "Sleep",
-    short: "Sleep",
+    labelKey: "health.sleep",
+    shortKey: "health.sleepShort",
     unit: "hr",
     inputStep: 0.25,
     bg: "bg-[#7fc66c]",
@@ -138,13 +139,13 @@ const META: Record<HealthMetric, MetricMeta> = {
     },
     Icon: Moon,
     formatValue: formatHours,
-    goalLabel: "Nightly sleep goal",
+    goalLabelKey: "health.sleepGoal",
     goalUnit: "hr",
     defaultGoal: 8,
   },
   standups: {
-    label: "Stand-ups",
-    short: "Stand",
+    labelKey: "health.standUps",
+    shortKey: "health.standShort",
     unit: "hr",
     inputStep: 1,
     bg: "bg-accent",
@@ -163,13 +164,13 @@ const META: Record<HealthMetric, MetricMeta> = {
     },
     Icon: ArrowUpFromLine,
     formatValue: (n) => Math.round(n).toString(),
-    goalLabel: "Daily stand-up hours",
+    goalLabelKey: "health.standGoal",
     goalUnit: "hr",
     defaultGoal: 12,
   },
   heart_rate: {
-    label: "Heart Rate",
-    short: "HR",
+    labelKey: "health.heartRate",
+    shortKey: "HR",
     unit: "bpm",
     inputStep: 1,
     bg: "bg-secondary",
@@ -188,7 +189,7 @@ const META: Record<HealthMetric, MetricMeta> = {
     },
     Icon: Heart,
     formatValue: (n) => `${Math.round(n)} bpm`,
-    goalLabel: "Resting target",
+    goalLabelKey: "health.heartGoal",
     goalUnit: "bpm",
     defaultGoal: 70,
     isLatest: true,
@@ -218,6 +219,7 @@ function dayLabel(date: string): string {
 }
 
 export function HealthPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data, isLoading, isError, refetch } = useGetHealthSummary();
@@ -243,11 +245,11 @@ export function HealthPage() {
       { data: { metric, value } },
       {
         onSuccess: () => {
-          toast({ title: `${META[metric].label} logged`, description: `Added ${META[metric].formatValue(value)}` });
+          toast({ title: `${t(META[metric].labelKey)} logged`, description: `Added ${META[metric].formatValue(value)}` });
           setLogFor(null);
           invalidate();
         },
-        onError: () => toast({ title: "Couldn't log entry", variant: "destructive" }),
+        onError: () => toast({ title: t("health.logFailed"), variant: "destructive" }),
       },
     );
   };
@@ -257,11 +259,11 @@ export function HealthPage() {
       { id, data: { value } },
       {
         onSuccess: () => {
-          toast({ title: "Updated" });
+          toast({ title: t("health.updated") });
           setEditEntry(null);
           invalidate();
         },
-        onError: () => toast({ title: "Couldn't update", variant: "destructive" }),
+        onError: () => toast({ title: t("health.updateFailed"), variant: "destructive" }),
       },
     );
   };
@@ -273,7 +275,7 @@ export function HealthPage() {
         onSuccess: () => {
           invalidate();
         },
-        onError: () => toast({ title: "Couldn't delete", variant: "destructive" }),
+        onError: () => toast({ title: t("health.deleteFailed"), variant: "destructive" }),
       },
     );
   };
@@ -283,11 +285,11 @@ export function HealthPage() {
       { data: { goals: METRIC_ORDER.map((m) => ({ metric: m, goal: next[m] })) } },
       {
         onSuccess: () => {
-          toast({ title: "Goals saved" });
+          toast({ title: t("health.goalsSaved") });
           setGoalsOpen(false);
           invalidate();
         },
-        onError: () => toast({ title: "Couldn't save goals", variant: "destructive" }),
+        onError: () => toast({ title: t("health.goalsFailed"), variant: "destructive" }),
       },
     );
   };
@@ -367,8 +369,8 @@ export function HealthPage() {
       {logFor && (
         <EntryDialog
           metric={logFor}
-          title={`Log ${META[logFor].label}`}
-          submitLabel="Log"
+          title={`${t("health.log")} ${t(META[logFor].labelKey)}`}
+          submitLabel={t("health.log")}
           isPending={createEntry.isPending}
           onClose={() => setLogFor(null)}
           onSubmit={(v) => onSubmitEntry(logFor, v)}
@@ -378,8 +380,8 @@ export function HealthPage() {
       {editEntry && (
         <EntryDialog
           metric={editEntry.metric}
-          title={`Edit ${META[editEntry.metric].label}`}
-          submitLabel="Save"
+          title={`${t("health.edit")} ${t(META[editEntry.metric].labelKey)}`}
+          submitLabel={t("common.save")}
           initialValue={editEntry.entry.value}
           isPending={updateEntry.isPending}
           onClose={() => setEditEntry(null)}
@@ -414,6 +416,7 @@ function MetricCard({
   onEdit: (entry: HealthEntry) => void;
   onDelete: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const meta = META[metric];
   const d = meta.detail;
   const Icon = meta.Icon;
@@ -447,8 +450,8 @@ function MetricCard({
             <Icon className={cn("w-6 h-6", d.iconFg)} strokeWidth={3} />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-wider opacity-80">{meta.short}</p>
-            <h2 className="text-xl font-black uppercase tracking-tight">{meta.label}</h2>
+            <p className="text-xs font-black uppercase tracking-wider opacity-80">{t(meta.shortKey)}</p>
+            <h2 className="text-xl font-black uppercase tracking-tight">{t(meta.labelKey)}</h2>
           </div>
         </div>
         <button
@@ -458,7 +461,7 @@ function MetricCard({
             "p-2 rounded-xl border-brutal-sm shadow-brutal-sm hover:translate-y-0.5 hover:shadow-none transition-all",
             d.plusBtn ?? "bg-card text-card-foreground",
           )}
-          aria-label={`Log ${meta.label}`}
+          aria-label={`Log ${t(meta.labelKey)}`}
         >
           <Plus className="w-5 h-5" strokeWidth={3} />
         </button>
@@ -480,7 +483,7 @@ function MetricCard({
             min {Math.round(summary.todayMin)} · avg {Math.round(summary.todayAvg)} · max {Math.round(summary.todayMax)} bpm
           </p>
         ) : meta.isLatest ? (
-          <p className="text-xs font-bold uppercase opacity-80 mt-1">No reading yet today</p>
+          <p className="text-xs font-bold uppercase opacity-80 mt-1">{t("health.noReading")}</p>
         ) : (
           <div className={cn("mt-2 h-3 rounded-full border-brutal-sm overflow-hidden", d.progressTrack)}>
             <div className={cn("h-full", d.progressFill)} style={{ width: `${goalPct}%` }} />
@@ -519,7 +522,7 @@ function MetricCard({
         <div className={cn("rounded-2xl overflow-hidden", d.entriesWrap)}>
           <div className={cn("px-3 py-2", d.entriesHeader)}>
             <p className={cn("text-xs font-black uppercase tracking-wider", d.entriesHeaderFg)}>
-              Today's Entries · {summary.entries.length}
+              {t("health.todaysEntries")} · {summary.entries.length}
             </p>
           </div>
           <ul className="divide-y-[3px] divide-foreground/12">
@@ -538,7 +541,7 @@ function MetricCard({
                     data-testid={`edit-${metric}-${e.id}`}
                     onClick={() => onEdit(e)}
                     className="p-1.5 rounded-md border-2 border-foreground bg-card hover:bg-accent/80 transition-colors"
-                    aria-label="Edit"
+                    aria-label={t("health.edit")}
                   >
                     <Pencil className="w-3.5 h-3.5" strokeWidth={3} />
                   </button>
@@ -546,7 +549,7 @@ function MetricCard({
                     data-testid={`delete-${metric}-${e.id}`}
                     onClick={() => onDelete(e.id)}
                     className="p-1.5 rounded-md border-2 border-foreground bg-card hover:bg-destructive/25 transition-colors"
-                    aria-label="Delete"
+                    aria-label={t("health.delete")}
                   >
                     <Trash2 className="w-3.5 h-3.5" strokeWidth={3} />
                   </button>
@@ -577,6 +580,7 @@ function EntryDialog({
   onClose: () => void;
   onSubmit: (value: number) => void;
 }) {
+  const { t } = useTranslation();
   const meta = META[metric];
   const [value, setValue] = useState<string>(initialValue !== undefined ? String(initialValue) : "");
 
@@ -662,6 +666,7 @@ function GoalsDialog({
   onClose: () => void;
   onSave: (next: Record<HealthMetric, number>) => void;
 }) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<Record<HealthMetric, string>>(() =>
     Object.fromEntries(METRIC_ORDER.map((m) => [m, String(initial[m])])) as Record<HealthMetric, string>,
   );
@@ -720,7 +725,7 @@ function GoalsDialog({
                   <Icon className={cn("w-5 h-5", meta.detail.goalRowIconFg)} strokeWidth={3} />
                 </div>
                 <label className="flex-1">
-                  <p className="text-xs font-black uppercase tracking-wider">{meta.goalLabel}</p>
+                  <p className="text-xs font-black uppercase tracking-wider">{t(meta.goalLabelKey)}</p>
                   <div className="mt-1 flex items-center gap-2">
                     <input
                       data-testid={`goal-input-${m}`}
@@ -751,7 +756,7 @@ function GoalsDialog({
               disabled={isPending}
               className="flex-1 py-3 rounded-xl bg-primary text-white border-brutal-sm shadow-brutal-sm font-black uppercase disabled:opacity-60 hover:translate-y-0.5 hover:shadow-none transition-all"
             >
-              {isPending ? "..." : "Save Goals"}
+              {isPending ? "..." : t("health.saveGoals")}
             </button>
           </div>
         </div>

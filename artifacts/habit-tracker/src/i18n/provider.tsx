@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
-  detectBrowserLocale,
   getCatalog,
   readStoredLocale,
   translate,
@@ -25,7 +24,8 @@ function applyDocumentLang(locale: Locale) {
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => readStoredLocale() ?? detectBrowserLocale());
+  // First visit always starts in English; a saved choice (Settings) still wins.
+  const [locale, setLocaleState] = useState<Locale>(() => readStoredLocale() ?? "en");
 
   useEffect(() => {
     applyDocumentLang(locale);

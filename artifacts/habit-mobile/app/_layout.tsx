@@ -1,17 +1,9 @@
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  Inter_900Black,
-  useFonts,
-} from "@expo-google-fonts/inter";
 import { ClerkProvider, ClerkLoaded, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { listHabits, setAuthTokenGetter, setBaseUrl, setExtraHeadersGetter } from "@workspace/api-client-react";
 import { habitCalendarRequestHeaders } from "@workspace/habit-dates";
+import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -24,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ClerkAuthScreen } from "@/components/AuthScreen";
 import { RatePrompt } from "@/components/RatePrompt";
+import { I18nProvider } from "@/i18n";
 import { API_URL } from "@/lib/config";
 import { initializeAdMob } from "@/lib/admob";
 import { configureNotifications, rescheduleAllReminders } from "@/lib/reminders";
@@ -127,12 +120,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
+    Inter_400Regular: require("../assets/fonts/BeVietnamPro-Regular.ttf"),
+    Inter_500Medium: require("../assets/fonts/BeVietnamPro-Medium.ttf"),
+    Inter_600SemiBold: require("../assets/fonts/BeVietnamPro-SemiBold.ttf"),
+    Inter_700Bold: require("../assets/fonts/BeVietnamPro-Bold.ttf"),
+    Inter_800ExtraBold: require("../assets/fonts/BeVietnamPro-ExtraBold.ttf"),
+    Inter_900Black: require("../assets/fonts/BeVietnamPro-Black.ttf"),
   });
 
   useEffect(() => {
@@ -163,21 +156,23 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <ClerkProvider
-                publishableKey={publishableKey}
-                tokenCache={tokenCache}
-                proxyUrl={proxyUrl}
-              >
-                <ClerkLoaded>
-                  <RootLayoutNav />
-                </ClerkLoaded>
-              </ClerkProvider>
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </QueryClientProvider>
+        <I18nProvider>
+          <QueryClientProvider client={queryClient}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <ClerkProvider
+                  publishableKey={publishableKey}
+                  tokenCache={tokenCache}
+                  proxyUrl={proxyUrl}
+                >
+                  <ClerkLoaded>
+                    <RootLayoutNav />
+                  </ClerkLoaded>
+                </ClerkProvider>
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </QueryClientProvider>
+        </I18nProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );

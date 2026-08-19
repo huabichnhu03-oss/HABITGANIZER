@@ -7,15 +7,16 @@ import {
   type HabitCompletion,
 } from "@workspace/api-client-react";
 import { DynamicIcon, getHabitColor, getReadableForeground } from "@/components/icons";
+import { toIntlLocale, useTranslation } from "@/i18n";
 
 type DayKey = string;
 
 const DOW_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const DOW_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-const MONTH_LABELS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+const MONTH_KEYS = [
+  "months.1", "months.2", "months.3", "months.4", "months.5", "months.6",
+  "months.7", "months.8", "months.9", "months.10", "months.11", "months.12",
+] as const;
 
 function pad(n: number): string {
   return n < 10 ? `0${n}` : String(n);
@@ -51,6 +52,7 @@ interface CalendarOverviewProps {
 }
 
 export function CalendarOverview({ habits }: CalendarOverviewProps) {
+  const { t } = useTranslation();
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -178,7 +180,7 @@ export function CalendarOverview({ habits }: CalendarOverviewProps) {
             type="button"
             onClick={goPrev}
             data-testid="calendar-prev"
-            aria-label="Previous month"
+            aria-label={t("calendar.prevMonth")}
             className="p-3 rounded-xl border-brutal-sm bg-background hover:bg-muted active:translate-y-0.5 transition-all"
           >
             <ChevronLeft className="w-5 h-5" strokeWidth={3} />
@@ -187,13 +189,13 @@ export function CalendarOverview({ habits }: CalendarOverviewProps) {
             className="px-4 py-2 text-xl font-black uppercase tracking-tight min-w-[180px] text-center"
             data-testid="calendar-month-label"
           >
-            {MONTH_LABELS[viewMonth]} {viewYear}
+            {t(MONTH_KEYS[viewMonth])} {viewYear}
           </div>
           <button
             type="button"
             onClick={goNext}
             data-testid="calendar-next"
-            aria-label="Next month"
+            aria-label={t("calendar.nextMonth")}
             className="p-3 rounded-xl border-brutal-sm bg-background hover:bg-muted active:translate-y-0.5 transition-all"
           >
             <ChevronRight className="w-5 h-5" strokeWidth={3} />
@@ -203,7 +205,7 @@ export function CalendarOverview({ habits }: CalendarOverviewProps) {
 
       <div className="flex flex-wrap gap-2 mb-6" data-testid="calendar-filters">
         <FilterChip
-          label="All habits"
+          label={t("calendar.allHabits")}
           active={filterHabitId === "all"}
           onClick={() => {
             setFilterHabitId("all");
@@ -332,7 +334,7 @@ function DayCell({
   const completionRatio =
     scheduledCount > 0 ? Math.min(1, completedCount / scheduledCount) : 0;
 
-  // Heat-map fill: only when "All habits" filter is on.
+  // Heat-map fill: only when t("calendar.allHabits") filter is on.
   const fillStyle: React.CSSProperties = {};
   if (filterHabitId === "all" && completionRatio > 0) {
     const opacity = 0.18 + completionRatio * 0.55;
@@ -419,9 +421,10 @@ function DayDetail({
   onClose: () => void;
   habitsById: Map<number, { habit: Habit; index: number }>;
 }) {
+  const { t, locale } = useTranslation();
   const completedIds = new Set(cell.completedHabits.map((c) => c.habit.id));
   const missed = cell.scheduledHabits.filter((h) => !completedIds.has(h.id));
-  const dateLabel = new Date(cell.key + "T00:00:00").toLocaleDateString(undefined, {
+  const dateLabel = new Date(cell.key + "T00:00:00").toLocaleDateString(toIntlLocale(locale), {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -450,7 +453,7 @@ function DayDetail({
 
       {cell.completedHabits.length === 0 && missed.length === 0 && (
         <p className="text-base font-bold text-muted-foreground" data-testid="day-detail-empty">
-          No habits scheduled.
+          {t("calendar.noScheduled")}
         </p>
       )}
 
@@ -527,6 +530,7 @@ function DayDetail({
 }
 
 export function CalendarOverviewSection() {
+  const { t } = useTranslation();
   const { data: habits } = useListHabits();
   const { data: archivedHabits } = useListHabits({ archived: true });
   if (!habits) return null;
@@ -538,9 +542,9 @@ export function CalendarOverviewSection() {
     return (
       <div className="brutal-card bg-white p-8 text-center" data-testid="calendar-empty">
         <CalendarIcon className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-        <p className="text-lg font-black uppercase">No habits yet</p>
+        <p className="text-lg font-black uppercase">{t("calendar.noHabits")}</p>
         <p className="text-sm font-bold text-muted-foreground">
-          Create a habit to start tracking your calendar.
+          {t("calendar.createHint")}
         </p>
       </div>
     );

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useListHabits, type Habit } from "@workspace/api-client-react";
 import { localCalendarDateString } from "@workspace/habit-dates";
+import { getCatalog, readStoredLocale, translate } from "@/i18n/catalog";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -16,8 +17,10 @@ function todayKey(): string {
 }
 
 function fireNotification(habit: Habit, time: string) {
-  const title = `Reminder: ${habit.name}`;
-  const body = `It's ${time}. Time to ${habit.name.toLowerCase()}.`;
+  const locale = readStoredLocale() ?? "en";
+  const dict = getCatalog(locale);
+  const title = translate(dict, "reminders.title", { name: habit.name });
+  const body = translate(dict, "reminders.body", { time, name: habit.name.toLowerCase() });
   if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
     try {
       new Notification(title, { body, tag: `habit-${habit.id}-${todayKey()}-${time}` });

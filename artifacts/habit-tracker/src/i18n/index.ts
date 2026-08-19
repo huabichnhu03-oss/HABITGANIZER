@@ -4,8 +4,10 @@ export {
   LOCALE_STORAGE_KEY,
   detectBrowserLocale,
   getCatalog,
+  headingTextTransform,
   isLocale,
   readStoredLocale,
+  toIntlLocale,
   translate,
   writeStoredLocale,
 } from "./catalog";

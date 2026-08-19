@@ -38,10 +38,10 @@ const PLAN_CATALOG = [
   {
     slug: "premium",
     name: "Premium",
-    description: "Exclusive pets, analytics, and priority support",
+    description: "Exclusive pets, detailed stats, and priority support",
     priceMonthly: 999,
     priceYearly: 9590,
-    features: ["Exclusive pets", "Advanced analytics", "Priority support"],
+    features: ["Exclusive pets", "Detailed habit stats", "Priority support"],
     maxHabits: -1,
     maxPets: -1,
     exclusivePets: true,

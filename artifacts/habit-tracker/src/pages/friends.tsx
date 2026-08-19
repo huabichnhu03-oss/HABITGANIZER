@@ -15,8 +15,10 @@ import { Users, UserPlus, UserMinus, Copy, Check, Clock, X, Shield } from "lucid
 import { Card, CardContent } from "@/components/ui/card";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n";
 
 export function FriendsPage() {
+  const { t } = useTranslation();
   const profileQuery = useGetFriendProfile();
   const requestsQuery = useListFriendRequests();
   const friendsQuery = useListFriends();
@@ -30,7 +32,7 @@ export function FriendsPage() {
   const patchProfile = usePatchFriendProfile({
     mutation: {
       onSuccess: () => {
-        toast({ title: "Display name updated", variant: "success" });
+        toast({ title: t("friends.nameUpdated"), variant: "success" });
         setIsEditingName(false);
         profileQuery.refetch();
       },
@@ -41,16 +43,16 @@ export function FriendsPage() {
     mutation: {
       onSuccess: (data) => {
         if (data.becameFriends) {
-          toast({ title: "You're now friends!", variant: "success" });
+          toast({ title: t("friends.nowFriends"), variant: "success" });
         } else {
-          toast({ title: "Friend request sent", variant: "success" });
+          toast({ title: t("friends.requestSent"), variant: "success" });
         }
         setAddCode("");
         requestsQuery.refetch();
         friendsQuery.refetch();
       },
       onError: () => {
-        toast({ title: "Could not send request", description: "Check the friend code and try again.", variant: "destructive" });
+        toast({ title: t("friends.sendFailed"), description: t("friends.sendFailedHint"), variant: "destructive" });
       },
     },
   });
@@ -58,7 +60,7 @@ export function FriendsPage() {
   const acceptRequest = useAcceptFriendRequest({
     mutation: {
       onSuccess: () => {
-        toast({ title: "Friend request accepted!", variant: "success" });
+        toast({ title: t("friends.requestAccepted"), variant: "success" });
         requestsQuery.refetch();
         friendsQuery.refetch();
       },
@@ -84,7 +86,7 @@ export function FriendsPage() {
   const removeFriend = useRemoveFriend({
     mutation: {
       onSuccess: () => {
-        toast({ title: "Friend removed", variant: "success" });
+        toast({ title: t("friends.friendRemoved"), variant: "success" });
         friendsQuery.refetch();
       },
     },
@@ -96,7 +98,7 @@ export function FriendsPage() {
     return (
       <div className="space-y-8">
         <ApiQueryErrorBanner
-          title="Couldn't load friends"
+          title={t("friends.loadFailed")}
           onRetry={() => {
             void profileQuery.refetch();
             void requestsQuery.refetch();
@@ -127,7 +129,7 @@ export function FriendsPage() {
 
   function handleCopyCode() {
     navigator.clipboard.writeText(profile.friendCode).then(() => {
-      toast({ title: "Friend code copied!", variant: "success" });
+      toast({ title: t("friends.codeCopied"), variant: "success" });
     });
   }
 
@@ -148,16 +150,16 @@ export function FriendsPage() {
       <header className="flex items-center gap-4">
         <Users className="w-10 h-10 text-foreground drop-shadow-[2px_2px_0_rgba(0,0,0,1)] -rotate-6" />
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">Friends</h1>
-          <p className="text-muted-foreground font-medium">Connect with other HabitPup users</p>
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground">{t("friends.title")}</h1>
+          <p className="text-muted-foreground font-medium">{t("friends.subtitle")}</p>
         </div>
       </header>
 
-      {/* Your Profile Card */}
+      {/* {t("friends.yourProfile")} Card */}
       <Card className="border-brutal shadow-brutal rounded-[2rem] overflow-hidden">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-black uppercase tracking-tight text-foreground">Your Profile</h2>
+            <h2 className="text-xl font-black uppercase tracking-tight text-foreground">{t("friends.yourProfile")}</h2>
             <button
               onClick={() => {
                 setEditName(profile.displayName);
@@ -165,7 +167,7 @@ export function FriendsPage() {
               }}
               className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isEditingName ? "Cancel" : "Edit Name"}
+              {isEditingName ? t("common.cancel") : t("friends.editName")}
             </button>
           </div>
 
@@ -176,7 +178,7 @@ export function FriendsPage() {
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 maxLength={80}
-                placeholder="Display name"
+                placeholder={t("friends.displayName")}
                 className="flex-1 rounded-xl border-2 border-border bg-background px-4 py-2 font-medium text-foreground"
               />
               <button
@@ -188,18 +190,18 @@ export function FriendsPage() {
               </button>
             </div>
           ) : (
-            <p className="text-lg font-bold text-foreground mb-4">{profile.displayName || "No name set"}</p>
+            <p className="text-lg font-bold text-foreground mb-4">{profile.displayName || t("friends.noName")}</p>
           )}
 
           <div className="flex items-center gap-3">
             <div className="flex-1 rounded-xl border-2 border-dashed border-border bg-muted px-4 py-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Friend Code</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase mb-1">{t("friends.friendCode")}</p>
               <p className="text-2xl font-black tracking-widest text-foreground font-mono">{profile.friendCode}</p>
             </div>
             <button
               onClick={handleCopyCode}
               className="rounded-xl border-2 border-border bg-secondary px-4 py-3 font-bold text-foreground shadow-[2px_2px_0_hsl(var(--foreground))] active:translate-y-px active:shadow-none transition-all"
-              title="Copy friend code"
+              title={t("friends.copyCode")}
             >
               <Copy className="w-5 h-5" />
             </button>
@@ -207,12 +209,12 @@ export function FriendsPage() {
         </CardContent>
       </Card>
 
-      {/* Add Friend */}
+      {/* {t("friends.addFriend")} */}
       <Card className="border-brutal shadow-brutal rounded-[2rem] overflow-hidden">
         <CardContent className="p-6">
           <h2 className="text-xl font-black uppercase tracking-tight text-foreground mb-4 flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Add Friend
+            {t("friends.addFriend")}
           </h2>
           <div className="flex gap-2">
             <input
@@ -221,7 +223,7 @@ export function FriendsPage() {
               onChange={e => setAddCode(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === "Enter" && handleSendRequest()}
               maxLength={10}
-              placeholder="Enter friend code"
+              placeholder={t("friends.enterCode")}
               className="flex-1 rounded-xl border-2 border-border bg-background px-4 py-3 font-mono font-bold text-foreground tracking-wider uppercase"
             />
             <button
@@ -229,25 +231,25 @@ export function FriendsPage() {
               disabled={sendRequest.isPending || !addCode.trim()}
               className="rounded-xl border-2 border-border bg-primary px-6 py-3 font-bold text-white shadow-[2px_2px_0_hsl(var(--foreground))] active:translate-y-px active:shadow-none transition-all disabled:opacity-50"
             >
-              {sendRequest.isPending ? "Sending..." : "Send"}
+              {sendRequest.isPending ? t("friends.sending") : t("friends.send")}
             </button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Incoming Requests */}
+      {/* {t("friends.incoming")} */}
       {incoming.length > 0 && (
         <Card className="border-brutal shadow-brutal rounded-[2rem] overflow-hidden">
           <CardContent className="p-6">
             <h2 className="text-xl font-black uppercase tracking-tight text-foreground mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Incoming Requests ({incoming.length})
+              {t("friends.incoming")} ({incoming.length})
             </h2>
             <div className="space-y-3">
               {incoming.map((req: FriendRequestItem) => (
                 <div key={req.id} className="flex items-center justify-between rounded-xl border-2 border-border bg-muted px-4 py-3">
                   <div>
-                    <p className="font-bold text-foreground">{req.fromDisplayName || "Unknown"}</p>
+                    <p className="font-bold text-foreground">{req.fromDisplayName || t("friends.unknown")}</p>
                     <p className="text-xs text-muted-foreground font-mono">{req.fromFriendCode}</p>
                   </div>
                   <div className="flex gap-2">
@@ -279,13 +281,13 @@ export function FriendsPage() {
           <CardContent className="p-6">
             <h2 className="text-xl font-black uppercase tracking-tight text-foreground mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Pending Sent ({outgoing.length})
+              {t("friends.pending")} ({outgoing.length})
             </h2>
             <div className="space-y-3">
               {outgoing.map((req: FriendRequestItem) => (
                 <div key={req.id} className="flex items-center justify-between rounded-xl border-2 border-border bg-muted px-4 py-3">
                   <div>
-                    <p className="font-bold text-foreground">{req.toDisplayName || "Unknown"}</p>
+                    <p className="font-bold text-foreground">{req.toDisplayName || t("friends.unknown")}</p>
                     <p className="text-xs text-muted-foreground font-mono">{req.toFriendCode}</p>
                   </div>
                   <button
@@ -307,18 +309,17 @@ export function FriendsPage() {
         <CardContent className="p-6">
           <h2 className="text-xl font-black uppercase tracking-tight text-foreground mb-4 flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Your Friends ({friends.length})
+            {t("friends.yourFriends")} ({friends.length})
           </h2>
           {friends.length === 0 ? (
             <p className="text-muted-foreground font-medium text-center py-8">
-              No friends yet. Share your friend code or add someone above!
-            </p>
+              {t("friends.noFriends")}</p>
           ) : (
             <div className="space-y-3">
               {friends.map(f => (
                 <div key={f.walletId} className="flex items-center justify-between rounded-xl border-2 border-border bg-muted px-4 py-3">
                   <div>
-                    <p className="font-bold text-foreground">{f.displayName || "Unknown"}</p>
+                    <p className="font-bold text-foreground">{f.displayName || t("friends.unknown")}</p>
                     <p className="text-xs text-muted-foreground font-mono">{f.friendCode}</p>
                   </div>
                   <button
@@ -329,7 +330,7 @@ export function FriendsPage() {
                     }}
                     disabled={removeFriend.isPending}
                     className="rounded-lg border-2 border-border bg-secondary px-3 py-1.5 text-sm font-bold text-foreground shadow-[2px_2px_0_hsl(var(--foreground))] active:translate-y-px active:shadow-none transition-all hover:bg-destructive hover:text-white"
-                    title="Remove friend"
+                    title={t("friends.remove")}
                   >
                     <UserMinus className="w-4 h-4" />
                   </button>

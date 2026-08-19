@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { PixelPup } from "@/components/PixelPup";
 import {
-  SERVER_WAKE_FUN_FACTS,
-  SERVER_WAKE_STATUS_LINES,
+  SERVER_WAKE_FACT_KEYS,
+  SERVER_WAKE_STATUS_KEYS,
   pickRandomIndex,
 } from "@/lib/server-wake-content";
+import { useTranslation } from "@/i18n";
 
 const STATUS_ROTATE_MS = 3_200;
 const FACT_ROTATE_MS = 9_000;
@@ -75,23 +76,24 @@ function PlayfulWakePup() {
  * Matches existing Today layout spacing — no extra cards or chrome.
  */
 export function ServerWakeScreen() {
+  const { t } = useTranslation();
   const [statusIndex, setStatusIndex] = useState(() =>
-    pickRandomIndex(SERVER_WAKE_STATUS_LINES.length),
+    pickRandomIndex(SERVER_WAKE_STATUS_KEYS.length),
   );
   const [factIndex, setFactIndex] = useState(() =>
-    pickRandomIndex(SERVER_WAKE_FUN_FACTS.length),
+    pickRandomIndex(SERVER_WAKE_FACT_KEYS.length),
   );
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      setStatusIndex((prev) => pickRandomIndex(SERVER_WAKE_STATUS_LINES.length, prev));
+      setStatusIndex((prev) => pickRandomIndex(SERVER_WAKE_STATUS_KEYS.length, prev));
     }, STATUS_ROTATE_MS);
     return () => window.clearInterval(id);
   }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      setFactIndex((prev) => pickRandomIndex(SERVER_WAKE_FUN_FACTS.length, prev));
+      setFactIndex((prev) => pickRandomIndex(SERVER_WAKE_FACT_KEYS.length, prev));
     }, FACT_ROTATE_MS);
     return () => window.clearInterval(id);
   }, []);
@@ -106,19 +108,19 @@ export function ServerWakeScreen() {
       <PlayfulWakePup />
 
       <p className="text-center text-base font-black uppercase tracking-tight text-foreground sm:text-lg">
-        {SERVER_WAKE_STATUS_LINES[statusIndex]}
+        {t(SERVER_WAKE_STATUS_KEYS[statusIndex])}
       </p>
 
       <p className="text-center text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-        Server waking up
+        {t("serverWake.wakingUp")}
       </p>
 
       <div className="mt-2 w-full max-w-sm border-t border-foreground/15 pt-6">
         <p className="mb-2 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-          Fun fact
+          {t("serverWake.funFact")}
         </p>
         <p className="text-center text-sm font-semibold leading-relaxed text-foreground/80">
-          {SERVER_WAKE_FUN_FACTS[factIndex]}
+          {t(SERVER_WAKE_FACT_KEYS[factIndex])}
         </p>
       </div>
 

@@ -16,12 +16,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { isOnboardingCompleted, markOnboardingCompleted } from "@/lib/onboarding-storage";
 import { useProfileAccount } from "@/contexts/profile-dialog-context";
+import { useTranslation } from "@/i18n";
+import { LanguageSelect } from "@/components/language-select";
 
 const STEPS = 4;
 
 type MetaShape = Record<string, unknown>;
 
 export function NewUserWelcome() {
+  const { t } = useTranslation();
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const { openProfile } = useProfileAccount();
@@ -66,12 +69,12 @@ export function NewUserWelcome() {
           bio: bio.trim() || null,
         },
       });
-      toast({ title: "Saved your profile" });
+      toast({ title: t("onboarding.saved") });
       setStep(3);
     } catch (err) {
       toast({
         title: "Couldn’t save",
-        description: err instanceof Error ? err.message : "Try again.",
+        description: err instanceof Error ? err.message : t("onboarding.tryAgain"),
       });
     } finally {
       setSavingProfile(false);
@@ -111,29 +114,30 @@ export function NewUserWelcome() {
             {step === 0 && (
               <>
                 <DialogTitle className="text-3xl font-black uppercase tracking-tight flex items-center gap-2">
-                  <Star className="w-10 h-10 fill-accent text-foreground" strokeWidth={2} /> Welcome!
+                  <Star className="w-10 h-10 fill-accent text-foreground" strokeWidth={2} /> {t("onboarding.welcome")}
                 </DialogTitle>
                 <DialogDescription className="text-base font-semibold text-foreground">
-                  Habiganize turns small daily ticks into streaks you can actually keep. You’re signed in. Your habits and virtual pups stay with this account everywhere.
+                  {t("onboarding.welcomeBody")}
                 </DialogDescription>
+                <LanguageSelect id="onboarding-language-select" className="pt-2" />
               </>
             )}
             {step === 1 && (
               <>
-                <DialogTitle className="text-3xl font-black uppercase tracking-tight">Your rhythm</DialogTitle>
+                <DialogTitle className="text-3xl font-black uppercase tracking-tight">{t("onboarding.yourRhythm")}</DialogTitle>
                 <DialogDescription asChild>
                   <ul className="text-base font-semibold space-y-3 text-left list-none p-0 m-0 text-foreground">
-                    <TourRow Icon={Star} title="Today" body="Tap habits to complete them. Add a mood or note if you feel like journaling the moment." />
-                    <TourRow Icon={List} title="Habits" body="Schedule which days count, tweak icons & colors; this is home base." />
-                    <TourRow Icon={BarChart2} title="Stats & history" body="Spot streak patterns and skim past completions without losing the neo-brutalist vibe." />
-                    <TourRow Icon={PawPrint} title="Pups" body="Earn coins and snacks as you stick with it. Your companion grows with your consistency." />
+                    <TourRow Icon={Star} title={t("onboarding.tourToday")} body={t("onboarding.tourTodayBody")} />
+                    <TourRow Icon={List} title={t("onboarding.tourHabits")} body={t("onboarding.tourHabitsBody")} />
+                    <TourRow Icon={BarChart2} title={t("onboarding.tourStats")} body={t("onboarding.tourStatsBody")} />
+                    <TourRow Icon={PawPrint} title={t("onboarding.tourPups")} body={t("onboarding.tourPupsBody")} />
                   </ul>
                 </DialogDescription>
               </>
             )}
             {step === 2 && (
               <>
-                <DialogTitle className="text-3xl font-black uppercase tracking-tight">About you</DialogTitle>
+                <DialogTitle className="text-3xl font-black uppercase tracking-tight">{t("onboarding.aboutYou")}</DialogTitle>
                 <DialogDescription className="text-base font-semibold text-foreground">
                   Optional extras help us personalize greetings and tune future perks. Gmail and OAuth live in Clerk. Open account settings anytime.
                 </DialogDescription>
@@ -148,7 +152,7 @@ export function NewUserWelcome() {
                       onChange={(e) => setFirstName(e.target.value)}
                       maxLength={50}
                       className="border-2 border-foreground rounded-xl bg-white font-bold"
-                      placeholder="Name or nickname"
+                      placeholder={t("onboarding.namePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">

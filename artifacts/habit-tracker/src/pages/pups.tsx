@@ -41,6 +41,7 @@ import { formatWaitRemaining, formatWaitRemainingA11y } from "@/lib/format-wait-
 import { PixelPup } from "@/components/PixelPup";
 import { PixelAccessory } from "@/components/PixelAccessory";
 import { ApiQueryErrorBanner } from "@/components/api-query-error-banner";
+import { useTranslation } from "@/i18n";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   isRewardedAdReadyWeb,
@@ -54,45 +55,45 @@ type AccessoryCategory = "head" | "eyes" | "neck" | "extras";
 
 const ACCESSORIES: {
   id: string;
-  label: string;
+  labelKey: string;
   category: AccessoryCategory;
   defaultX: number;
   defaultY: number;
 }[] = [
-  { id: "crown",     label: "Crown",     category: "head",   defaultX: 0.5,  defaultY: 0.12 },
-  { id: "hat",       label: "Top hat",   category: "head",   defaultX: 0.5,  defaultY: 0.12 },
-  { id: "cap",       label: "Cap",       category: "head",   defaultX: 0.5,  defaultY: 0.14 },
-  { id: "graduate",  label: "Grad cap",  category: "head",   defaultX: 0.5,  defaultY: 0.12 },
-  { id: "glasses",   label: "Shades",    category: "eyes",   defaultX: 0.5,  defaultY: 0.38 },
-  { id: "specs",     label: "Glasses",   category: "eyes",   defaultX: 0.5,  defaultY: 0.38 },
-  { id: "goggles",   label: "Goggles",   category: "eyes",   defaultX: 0.5,  defaultY: 0.38 },
-  { id: "bowtie",    label: "Bowtie",    category: "neck",   defaultX: 0.5,  defaultY: 0.62 },
-  { id: "scarf",     label: "Scarf",     category: "neck",   defaultX: 0.5,  defaultY: 0.66 },
-  { id: "necktie",   label: "Necktie",   category: "neck",   defaultX: 0.5,  defaultY: 0.66 },
-  { id: "bell",      label: "Bell",      category: "neck",   defaultX: 0.5,  defaultY: 0.62 },
-  { id: "bone",      label: "Bone",      category: "extras", defaultX: 0.5,  defaultY: 0.52 },
-  { id: "flower",    label: "Flower",    category: "extras", defaultX: 0.28, defaultY: 0.22 },
-  { id: "star",      label: "Star",      category: "extras", defaultX: 0.74, defaultY: 0.32 },
-  { id: "beanie",    label: "Beanie",    category: "head",   defaultX: 0.5,  defaultY: 0.12 },
-  { id: "party",     label: "Party hat", category: "head",   defaultX: 0.5,  defaultY: 0.10 },
-  { id: "halo",      label: "Halo",      category: "head",   defaultX: 0.5,  defaultY: 0.08 },
-  { id: "santa",     label: "Santa hat", category: "head",   defaultX: 0.5,  defaultY: 0.10 },
-  { id: "monocle",   label: "Monocle",   category: "eyes",   defaultX: 0.62, defaultY: 0.38 },
-  { id: "heart-eye", label: "Hearts",    category: "eyes",   defaultX: 0.5,  defaultY: 0.36 },
-  { id: "collar",    label: "Collar",    category: "neck",   defaultX: 0.5,  defaultY: 0.66 },
-  { id: "medal",     label: "Medal",     category: "neck",   defaultX: 0.5,  defaultY: 0.70 },
-  { id: "pawprint",  label: "Paw",       category: "extras", defaultX: 0.30, defaultY: 0.78 },
-  { id: "fire",      label: "Fire",      category: "extras", defaultX: 0.80, defaultY: 0.78 },
-  { id: "rainbow",   label: "Rainbow",   category: "extras", defaultX: 0.18, defaultY: 0.30 },
-  { id: "ball-toy",  label: "Ball",      category: "extras", defaultX: 0.85, defaultY: 0.85 },
+  { id: "crown",     labelKey: "pups.accCrown",     category: "head",   defaultX: 0.5,  defaultY: 0.12 },
+  { id: "hat",       labelKey: "pups.accHat",   category: "head",   defaultX: 0.5,  defaultY: 0.12 },
+  { id: "cap",       labelKey: "pups.accCap",       category: "head",   defaultX: 0.5,  defaultY: 0.14 },
+  { id: "graduate",  labelKey: "pups.accGraduate",  category: "head",   defaultX: 0.5,  defaultY: 0.12 },
+  { id: "glasses",   labelKey: "pups.accGlasses",    category: "eyes",   defaultX: 0.5,  defaultY: 0.38 },
+  { id: "specs",     labelKey: "pups.accSpecs",   category: "eyes",   defaultX: 0.5,  defaultY: 0.38 },
+  { id: "goggles",   labelKey: "pups.accGoggles",   category: "eyes",   defaultX: 0.5,  defaultY: 0.38 },
+  { id: "bowtie",    labelKey: "pups.accBowtie",    category: "neck",   defaultX: 0.5,  defaultY: 0.62 },
+  { id: "scarf",     labelKey: "pups.accScarf",     category: "neck",   defaultX: 0.5,  defaultY: 0.66 },
+  { id: "necktie",   labelKey: "pups.accNecktie",   category: "neck",   defaultX: 0.5,  defaultY: 0.66 },
+  { id: "bell",      labelKey: "pups.accBell",      category: "neck",   defaultX: 0.5,  defaultY: 0.62 },
+  { id: "bone",      labelKey: "pups.accBone",      category: "extras", defaultX: 0.5,  defaultY: 0.52 },
+  { id: "flower",    labelKey: "pups.accFlower",    category: "extras", defaultX: 0.28, defaultY: 0.22 },
+  { id: "star",      labelKey: "pups.accStar",      category: "extras", defaultX: 0.74, defaultY: 0.32 },
+  { id: "beanie",    labelKey: "pups.accBeanie",    category: "head",   defaultX: 0.5,  defaultY: 0.12 },
+  { id: "party",     labelKey: "pups.accParty", category: "head",   defaultX: 0.5,  defaultY: 0.10 },
+  { id: "halo",      labelKey: "pups.accHalo",      category: "head",   defaultX: 0.5,  defaultY: 0.08 },
+  { id: "santa",     labelKey: "pups.accSanta", category: "head",   defaultX: 0.5,  defaultY: 0.10 },
+  { id: "monocle",   labelKey: "pups.accMonocle",   category: "eyes",   defaultX: 0.62, defaultY: 0.38 },
+  { id: "heart-eye", labelKey: "pups.accHeartEye",    category: "eyes",   defaultX: 0.5,  defaultY: 0.36 },
+  { id: "collar",    labelKey: "pups.accCollar",    category: "neck",   defaultX: 0.5,  defaultY: 0.66 },
+  { id: "medal",     labelKey: "pups.accMedal",     category: "neck",   defaultX: 0.5,  defaultY: 0.70 },
+  { id: "pawprint",  labelKey: "pups.accPawprint",       category: "extras", defaultX: 0.30, defaultY: 0.78 },
+  { id: "fire",      labelKey: "pups.accFire",      category: "extras", defaultX: 0.80, defaultY: 0.78 },
+  { id: "rainbow",   labelKey: "pups.accRainbow",   category: "extras", defaultX: 0.18, defaultY: 0.30 },
+  { id: "ball-toy",  labelKey: "pups.accBallToy",      category: "extras", defaultX: 0.85, defaultY: 0.85 },
 ];
 
 const CATEGORY_ORDER: AccessoryCategory[] = ["head", "eyes", "neck", "extras"];
-const CATEGORY_LABELS: Record<AccessoryCategory, string> = {
-  head: "Head",
-  eyes: "Eyes",
-  neck: "Neck",
-  extras: "Extras",
+const CATEGORY_LABEL_KEYS: Record<AccessoryCategory, string> = {
+  head: "pups.catHead",
+  eyes: "pups.catEyes",
+  neck: "pups.catNeck",
+  extras: "pups.catExtras",
 };
 
 const MOOD_EMOJI: Record<OwnedPet["mood"], string> = {
@@ -103,12 +104,9 @@ const MOOD_EMOJI: Record<OwnedPet["mood"], string> = {
   sad: "😢",
 };
 
-const COINS_SHORTAGE_TITLE = "Not enough coins";
-const COINS_SHORTAGE_DESCRIPTION =
-  "You don't have enough coins yet. Complete habits and track more tasks to earn more.";
-
-const WATCH_AD_PATRON_COPY =
-  "Habiganize is non-profit. Watching a short ad is like buying our team a coffee at the café. Thank you for helping keep the app free.";
+const COINS_SHORTAGE_TITLE_KEY = "pups.notEnoughCoins";
+const COINS_SHORTAGE_DESC_KEY = "pups.notEnoughCoinsDesc";
+const WATCH_AD_PATRON_KEY = "pups.adPatron";
 
 /** Optional layered bath sprites under public/pups-art/bath/ — mirror on API static host for native clients. */
 const BATH_BACKGROUND_SRC = "/pups-art/bath/background.png";
@@ -223,6 +221,7 @@ function DressedPetStage({
   onRemoveAt?: (index: number) => void;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const localRef = useRef<HTMLDivElement>(null);
   const ref = stageRef ?? localRef;
   const stageWidth = useElementWidth(ref);
@@ -253,7 +252,7 @@ function DressedPetStage({
               onDoubleClick={() => onRemoveAt?.(i)}
               className="absolute cursor-grab active:cursor-grabbing drop-shadow-[2px_2px_0_rgba(0,0,0,1)] flex items-center justify-center p-1"
               style={style}
-              title="Drag to reposition · Double-click to remove"
+              title={t("pups.repositionHint")}
             >
               <PixelAccessory id={p.accessoryId} size={accSize} />
             </button>
@@ -275,10 +274,10 @@ function DressedPetStage({
 
 type ShopCategory = "pets" | "food" | "toys";
 
-const SHOP_CATEGORIES: { id: ShopCategory; label: string }[] = [
-  { id: "pets", label: "Pups" },
-  { id: "food", label: "Food" },
-  { id: "toys", label: "Toys" },
+const SHOP_CATEGORIES: { id: ShopCategory; labelKey: string }[] = [
+  { id: "pets", labelKey: "pups.tabPups" },
+  { id: "food", labelKey: "pups.tabFood" },
+  { id: "toys", labelKey: "pups.tabToys" },
 ];
 
 function getErrorString(err: unknown): string {
@@ -298,6 +297,7 @@ function isInsufficientCoinsError(err: unknown): boolean {
 }
 
 export function PupsPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -341,8 +341,8 @@ export function PupsPage() {
         onError: (err) => {
           if (isInsufficientCoinsError(err)) {
             toast({
-              title: COINS_SHORTAGE_TITLE,
-              description: COINS_SHORTAGE_DESCRIPTION,
+              title: t(COINS_SHORTAGE_TITLE_KEY),
+              description: t(COINS_SHORTAGE_DESC_KEY),
               variant: "accent",
               duration: COINS_TOAST_MS,
             });
@@ -432,10 +432,10 @@ export function PupsPage() {
         <div className="rounded-3xl border-[3px] border-foreground bg-card shadow-brutal overflow-hidden">
           <div
             role="tablist"
-            aria-label="Shop categories"
+            aria-label={t("pups.shopCategories")}
             className="flex flex-wrap items-end gap-x-1 gap-y-1 sm:gap-x-2 bg-muted/90 px-1 sm:px-2 pt-2 sm:pt-2.5"
           >
-            {SHOP_CATEGORIES.map(({ id, label }) => {
+            {SHOP_CATEGORIES.map(({ id, labelKey }) => {
               const active = shopCategory === id;
               return (
                 <button
@@ -454,7 +454,7 @@ export function PupsPage() {
                       : "z-10 bg-muted/90 text-foreground/70 hover:text-foreground hover:bg-muted mb-0"
                   )}
                 >
-                  {label}
+                  {t(labelKey)}
                 </button>
               );
             })}
@@ -549,8 +549,8 @@ export function PupsPage() {
                       <h3 className="text-2xl font-black uppercase tracking-tight">{pet.name}</h3>
                       <span className="text-xs font-bold uppercase opacity-70">{pet.breed}</span>
                     </div>
-                    <Meter label="Hunger" icon={<Drumstick className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.hunger} color="bg-pink-400" />
-                    <Meter label="Thirst" icon={<Droplet className="w-3.5 h-3.5 fill-blue-500" strokeWidth={3} />} value={pet.thirst} color="bg-blue-400" />
+                    <Meter label={t("pups.hunger")} icon={<Drumstick className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.hunger} color="bg-pink-400" />
+                    <Meter label={t("pups.thirst")} icon={<Droplet className="w-3.5 h-3.5 fill-blue-500" strokeWidth={3} />} value={pet.thirst} color="bg-blue-400" />
                     <p className="mt-1 text-xs font-bold uppercase opacity-70 text-center">Tap to care &amp; dress up</p>
                   </div>
                 </button>
@@ -622,7 +622,7 @@ function CareMeter({
 }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <div data-testid={`meter-${label.toLowerCase()}`} className="p-2 rounded-xl bg-muted border-brutal-sm">
+    <div data-testid={`meter-${label.toLowerCase()}`} className="p-2 rounded-[10px] bg-muted border-brutal-sm">
       <div className="flex items-center justify-between text-[11px] font-black uppercase mb-1">
         <span className="flex items-center gap-1">
           {icon}
@@ -664,7 +664,7 @@ function ActionButton({
       disabled={disabled}
       title={hint}
       className={cn(
-        "py-3 px-2 rounded-xl border-brutal-sm shadow-brutal-sm font-black uppercase flex flex-col items-center justify-center gap-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none",
+        "py-3 px-2 rounded-[10px] border-brutal-sm shadow-brutal-sm font-black uppercase flex flex-col items-center justify-center gap-0.5 hover:translate-y-0.5 hover:shadow-none active:translate-y-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none",
         tone
       )}
     >
@@ -700,6 +700,7 @@ function PetDetailModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const feedPet = useFeedPet();
@@ -741,7 +742,7 @@ function PetDetailModal({
         onChanged();
       } catch (err) {
         if (previous) qc.setQueryData(getGetCollectionQueryKey(), previous);
-        toast({ title: "Couldn't rename", description: errorMessage(err, "Try again"), variant: "destructive" });
+        toast({ title: "Couldn't rename", description: errorMessage(err, t("pups.tryAgain")), variant: "destructive" });
         setNameDraft(pet.name);
         setEditingName(false);
       }
@@ -771,7 +772,7 @@ function PetDetailModal({
         onError: (err) => {
           toast({
             title: "Couldn't save outfit",
-            description: errorMessage(err, "Try again"),
+            description: errorMessage(err, t("pups.tryAgain")),
             variant: "destructive",
           });
           setLocalLayout(pet.accessoryLayout);
@@ -809,7 +810,7 @@ function PetDetailModal({
         onError: (err) =>
           toast({
             title: "Play on cooldown",
-            description: errorMessage(err, "Try again later"),
+            description: errorMessage(err, t("pups.tryAgainLater")),
             variant: "destructive",
           }),
       }
@@ -828,7 +829,7 @@ function PetDetailModal({
         onError: (err) => {
           toast({
             title: "Walk on cooldown",
-            description: errorMessage(err, "Try again later"),
+            description: errorMessage(err, t("pups.tryAgainLater")),
             variant: "destructive",
           });
           setWalkOpen(false);
@@ -849,7 +850,7 @@ function PetDetailModal({
         onError: (err) => {
           toast({
             title: "Bath on cooldown",
-            description: errorMessage(err, "Try again later"),
+            description: errorMessage(err, t("pups.tryAgainLater")),
             variant: "destructive",
           });
           setBathOpen(false);
@@ -1016,7 +1017,7 @@ function PetDetailModal({
                 data-testid="pet-name-edit"
                 onClick={() => { setNameDraft(pet.name); setEditingName(true); }}
                 className="group flex items-center gap-2 text-left"
-                title="Click to rename"
+                title={t("pups.clickRename")}
               >
                 <h2 className="text-2xl font-black uppercase tracking-tight truncate">{pet.name}</h2>
                 <Pencil className="w-4 h-4 opacity-50 group-hover:opacity-100" strokeWidth={3} />
@@ -1028,7 +1029,7 @@ function PetDetailModal({
           </div>
           <button
             data-testid="close-pet-detail"
-            aria-label="Close pet details"
+            aria-label={t("pups.closePet")}
             onClick={onClose}
             className="p-2 rounded-xl border-brutal-sm bg-card hover:bg-destructive/20"
           >
@@ -1086,22 +1087,22 @@ function PetDetailModal({
             )}
           >
             <Sparkles className="w-4 h-4" strokeWidth={3} />
-            {dressUp ? "Exit dress-up" : "Dress-up mode"}
+            {dressUp ? t("pups.exitDressUp") : t("pups.dressUp")}
           </button>
 
           {!dressUp && (<>
           <div className="grid grid-cols-2 gap-2">
-            <CareMeter label="Walk" icon={<Footprints className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.walk} status={pet.walkLabel} color="bg-emerald-400" />
-            <CareMeter label="Bath" icon={<Bath className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.bath} status={pet.bathLabel} color="bg-cyan-400" />
-            <CareMeter label="Feed" icon={<Drumstick className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.hunger} status={pet.feedLabel} color="bg-pink-400" />
-            <CareMeter label="Play" icon={<Gamepad2 className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.play} status={pet.playLabel} color="bg-violet-400" />
+            <CareMeter label={t("pups.walk")} icon={<Footprints className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.walk} status={pet.walkLabel} color="bg-emerald-400" />
+            <CareMeter label={t("pups.bath")} icon={<Bath className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.bath} status={pet.bathLabel} color="bg-cyan-400" />
+            <CareMeter label={t("pups.feed")} icon={<Drumstick className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.hunger} status={pet.feedLabel} color="bg-pink-400" />
+            <CareMeter label={t("pups.play")} icon={<Gamepad2 className="w-3.5 h-3.5" strokeWidth={3} />} value={pet.play} status={pet.playLabel} color="bg-violet-400" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <ActionButton
               testId={`walk-${pet.id}`}
               icon={<Footprints className="w-5 h-5" strokeWidth={3} />}
-              label="Walk"
+              label={t("pups.walk")}
               tone="bg-emerald-300"
               disabled={careBusy || walkPet.isPending || !pet.walkReady}
               hint={pet.walkReady ? "Take for a walk" : pet.walkLabel}
@@ -1110,7 +1111,7 @@ function PetDetailModal({
             <ActionButton
               testId={`bath-${pet.id}`}
               icon={<Bath className="w-5 h-5" strokeWidth={3} />}
-              label="Bath"
+              label={t("pups.bath")}
               tone="bg-cyan-300"
               disabled={careBusy || bathPet.isPending || !pet.bathReady}
               hint={pet.bathReady ? "Give a bath" : pet.bathLabel}
@@ -1119,7 +1120,7 @@ function PetDetailModal({
             <ActionButton
               testId={`feed-${pet.id}`}
               icon={<Drumstick className="w-5 h-5" strokeWidth={3} />}
-              label="Feed"
+              label={t("pups.feed")}
               tone="bg-pink-300"
               disabled={careBusy || feedPet.isPending || !pet.feedReady}
               hint={pet.feedLabel}
@@ -1128,7 +1129,7 @@ function PetDetailModal({
             <ActionButton
               testId={`play-${pet.id}`}
               icon={<Gamepad2 className="w-5 h-5" strokeWidth={3} />}
-              label="Play"
+              label={t("pups.play")}
               tone="bg-violet-300"
               disabled={careBusy || playPet.isPending || !pet.playReady}
               hint={pet.playReady ? "Play together" : pet.playLabel}
@@ -1149,7 +1150,7 @@ function PetDetailModal({
                   onError: (err) =>
                     toast({
                       title: "Can't train",
-                      description: errorMessage(err, "Try again later"),
+                      description: errorMessage(err, t("pups.tryAgainLater")),
                       variant: "destructive",
                     }),
                 }
@@ -1170,7 +1171,7 @@ function PetDetailModal({
                 onSuccess: () => { popReward("+35 💧", "bg-blue-300"); onChanged(); },
                 onError: (err) => toast({
                   title: "Can't water",
-                  description: formatPetCareErrorMessage(err, pet.name, "Try again"),
+                  description: formatPetCareErrorMessage(err, pet.name, t("pups.tryAgain")),
                   variant: "destructive",
                 }),
               })}
@@ -1201,7 +1202,7 @@ function PetDetailModal({
                       trayCategory === cat ? "bg-accent shadow-brutal-sm" : "bg-card hover:bg-muted"
                     )}
                   >
-                    {cat === "all" ? "All" : CATEGORY_LABELS[cat]}
+                    {cat === "all" ? t("calendar.allHabits") : t(CATEGORY_LABEL_KEYS[cat])}
                   </button>
                 ))}
               </div>
@@ -1216,7 +1217,7 @@ function PetDetailModal({
                 return (
                   <div key={cat}>
                     <div className="text-[10px] font-black uppercase opacity-60 mb-1.5 tracking-widest">
-                      {CATEGORY_LABELS[cat]}
+                      {t(CATEGORY_LABEL_KEYS[cat])}
                     </div>
                     <div className={cn("grid gap-2", dressUp ? "grid-cols-4" : "grid-cols-5") }>
                       {items.map((a) => {
@@ -1232,7 +1233,7 @@ function PetDetailModal({
                               dressUp && "p-1.5"
                             )}
                             style={{ touchAction: "none" }}
-                            title={dressUp ? `Tap to wear ${a.label}` : `Drag ${a.label}`}
+                            title={t(a.labelKey)}
                           >
                             <PixelAccessory id={a.id} size={dressUp ? 44 : 40} />
                             {wornCount > 0 && (
@@ -1320,6 +1321,7 @@ function WatchAdSupportDialog({
   rewardLine: string;
   grantRef: React.MutableRefObject<() => Promise<void>>;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [phase, setPhase] = useState<WatchAdPhase>("intro");
   const [rewardedReady, setRewardedReady] = useState(false);
@@ -1394,7 +1396,7 @@ function WatchAdSupportDialog({
         <DialogHeader>
           <DialogTitle className="font-black uppercase text-lg tracking-tight">{headline}</DialogTitle>
           <DialogDescription className="text-sm font-semibold text-foreground/85 pt-1 leading-snug">
-            {WATCH_AD_PATRON_COPY}
+            {t(WATCH_AD_PATRON_KEY)}
           </DialogDescription>
         </DialogHeader>
         {phase === "intro" && (
@@ -1435,6 +1437,7 @@ function WatchAdSupportDialog({
 }
 
 function WatchAdForCoinsRow({ onChanged }: { onChanged: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const grantRef = useRef(() => Promise.resolve());
@@ -1463,12 +1466,12 @@ function WatchAdForCoinsRow({ onChanged }: { onChanged: () => void }) {
       <WatchAdSupportDialog
         open={open}
         onOpenChange={setOpen}
-        headline="Earn bonus coins"
+        headline={t("pups.earnBonus")}
         rewardLine="A short rewarded video adds bonus coins when you finish it."
         grantRef={grantRef}
       />
       <div className="rounded-2xl border-brutal shadow-brutal-sm bg-amber-100 p-3 sm:p-4">
-        <p className="text-[11px] sm:text-xs font-bold text-foreground/85 leading-snug mb-3">{WATCH_AD_PATRON_COPY}</p>
+        <p className="text-[11px] sm:text-xs font-bold text-foreground/85 leading-snug mb-3">{t(WATCH_AD_PATRON_KEY)}</p>
         <button
           type="button"
           data-testid="watch-ad-coins-btn"
@@ -1484,6 +1487,7 @@ function WatchAdForCoinsRow({ onChanged }: { onChanged: () => void }) {
 }
 
 function VisitorCard({ onChanged }: { onChanged: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: visitor } = (useGetVisitor as any)({
     query: {
@@ -1594,7 +1598,7 @@ function VisitorCard({ onChanged }: { onChanged: () => void }) {
               ready ? "text-xs sm:text-sm uppercase" : "text-[11px] sm:text-[13px] normal-case font-bold text-center min-w-[4.75rem]"
             }`}
           >
-            {ready ? "Play · +15 🪙" : formatWaitRemaining(cooldownMs)}
+            {ready ? t("pups.playPlus15") : formatWaitRemaining(cooldownMs)}
           </button>
           {!ready && (
             <button
@@ -1614,6 +1618,7 @@ function VisitorCard({ onChanged }: { onChanged: () => void }) {
 }
 
 function FoodShop({ onChanged }: { onChanged: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: foods, isLoading } = useListFoods();
   const buyFood = useBuyFood();
@@ -1665,14 +1670,14 @@ function FoodShop({ onChanged }: { onChanged: () => void }) {
                         toast(
                           isInsufficientCoinsError(err)
                             ? {
-                                title: COINS_SHORTAGE_TITLE,
-                                description: COINS_SHORTAGE_DESCRIPTION,
+                                title: t(COINS_SHORTAGE_TITLE_KEY),
+                                description: t(COINS_SHORTAGE_DESC_KEY),
                                 variant: "accent",
                                 duration: COINS_TOAST_MS,
                               }
                             : {
                                 title: "Can't buy",
-                                description: errorMessage(err, "Try again later"),
+                                description: errorMessage(err, t("pups.tryAgainLater")),
                                 variant: "destructive",
                                 duration: COINS_TOAST_MS,
                               }
@@ -1694,6 +1699,7 @@ function FoodShop({ onChanged }: { onChanged: () => void }) {
 }
 
 function ToyShop({ onChanged }: { onChanged: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: toys, isLoading } = useListToys();
   const buyToy = useBuyToy();
@@ -1735,7 +1741,7 @@ function ToyShop({ onChanged }: { onChanged: () => void }) {
             </div>
             <div className="text-xs opacity-80">{toy.description}</div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold">{toy.owned ? "OWNED" : "Locked"}</span>
+              <span className="text-xs font-bold">{toy.owned ? t("pups.owned") : t("pups.locked")}</span>
               {!toy.owned && (
                 <button
                   data-testid={`buy-toy-${toy.slug}`}
@@ -1748,14 +1754,14 @@ function ToyShop({ onChanged }: { onChanged: () => void }) {
                           toast(
                             isInsufficientCoinsError(err)
                               ? {
-                                  title: COINS_SHORTAGE_TITLE,
-                                  description: COINS_SHORTAGE_DESCRIPTION,
+                                  title: t(COINS_SHORTAGE_TITLE_KEY),
+                                  description: t(COINS_SHORTAGE_DESC_KEY),
                                   variant: "accent",
                                   duration: COINS_TOAST_MS,
                                 }
                               : {
                                   title: "Can't buy",
-                                  description: errorMessage(err, "Try again later"),
+                                  description: errorMessage(err, t("pups.tryAgainLater")),
                                   variant: "destructive",
                                   duration: COINS_TOAST_MS,
                                 }
@@ -1836,6 +1842,7 @@ function BathActivity({
   onClose: () => void;
   onComplete: () => void;
 }) {
+  const { t } = useTranslation();
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [hideBgImg, setHideBgImg] = useState(false);
   const [hideShowerImg, setHideShowerImg] = useState(false);
@@ -1943,7 +1950,7 @@ function BathActivity({
     tipY <= BATH_WASH_ZONE.b;
 
   const scrubHint =
-    washProgress >= 100 ? "All clean!" : rinsingNow ? `${Math.floor(washProgress)}% rinsed` : "Drag shower into dashed zone";
+    washProgress >= 100 ? t("pups.allClean") : rinsingNow ? `${Math.floor(washProgress)}% rinsed` : "Drag shower into dashed zone";
 
   const stagePct = rinsingNow && washProgress < 99 ? `${((tipX + tipY) / 2) * 40 + 180}deg` : "200deg";
 
@@ -2083,6 +2090,7 @@ function WalkActivity({
   onClose: () => void;
   onComplete: () => void;
 }) {
+  const { t } = useTranslation();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [progress, setProgress] = useState(0);
   const [pupX, setPupX] = useState(40);
@@ -2183,7 +2191,7 @@ function WalkActivity({
           <div className="h-full bg-emerald-400 transition-all" style={{ width: `${progress}%` }} />
         </div>
         <div className="text-center text-[10px] font-black uppercase mt-2 opacity-70">
-          {progress >= 100 ? "Good pup!" : `${Math.floor(progress)}% there`}
+          {progress >= 100 ? t("pups.goodPup") : `${Math.floor(progress)}% there`}
         </div>
       </div>
       <div className="mt-4 flex gap-3">

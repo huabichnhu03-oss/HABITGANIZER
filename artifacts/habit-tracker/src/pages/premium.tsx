@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { customFetch, extractApiErrorMessage } from "@workspace/api-client-react";
 import { createClerkAppearance } from "@/lib/clerk-appearance";
@@ -109,6 +110,7 @@ async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export default function PremiumPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { has, isLoaded } = useAuth();
@@ -153,7 +155,7 @@ export default function PremiumPage() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Purchase failed",
+        title: t("premium.purchaseFailed"),
         description: extractApiErrorMessage(error, error.message),
         variant: "destructive",
       });
@@ -171,7 +173,7 @@ export default function PremiumPage() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Donation failed",
+        title: t("premium.donationFailed"),
         description: extractApiErrorMessage(error, error.message),
         variant: "destructive",
       });
@@ -182,15 +184,15 @@ export default function PremiumPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("donated") === "1") {
       toast({
-        title: "Thank you! 💛",
-        description: "Your donation helps keep Habiganize growing.",
+        title: t("premium.thankYou"),
+        description: t("premium.thankYouDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/donations/mine"] });
     }
     if (params.get("coins") === "1") {
       toast({
-        title: "Coins on the way!",
-        description: "Payment received. Your wallet will update in a moment.",
+        title: t("premium.coinsOnWay"),
+        description: t("premium.coinsOnWayDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/wallet"] });
     }
@@ -221,7 +223,7 @@ export default function PremiumPage() {
         className="text-center mb-12"
       >
         <h1 className="text-4xl font-black mb-4 tracking-tight text-foreground">
-          Supercharge Your Habits
+          {t("premium.headline")}
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Unlock premium features, exclusive pets, and support Habiganize
@@ -296,11 +298,11 @@ export default function PremiumPage() {
                         <ul className="space-y-2 text-sm">
                           <li className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-600" />
-                            {plan.maxHabits === -1 ? "Unlimited" : plan.maxHabits} habits
+                            {plan.maxHabits === -1 ? t("premium.unlimited") : plan.maxHabits} habits
                           </li>
                           <li className="flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-600" />
-                            {plan.maxPets === -1 ? "Unlimited" : plan.maxPets} pets
+                            {plan.maxPets === -1 ? t("premium.unlimited") : plan.maxPets} pets
                           </li>
                           {plan.exclusivePets && (
                             <li className="flex items-center gap-2">
@@ -314,7 +316,7 @@ export default function PremiumPage() {
                           )}
                           {plan.advancedAnalytics && (
                             <li className="flex items-center gap-2">
-                              <BarChart3 className="h-4 w-4 text-rose-500" /> Analytics
+                              <BarChart3 className="h-4 w-4 text-rose-500" /> Detailed stats
                             </li>
                           )}
                         </ul>
@@ -332,7 +334,7 @@ export default function PremiumPage() {
                 <div>
                   <h3 className="text-lg font-semibold">Your plan: {subscription.plan}</h3>
                   <p className="text-muted-foreground text-sm">
-                    {subscription.billingCycle === "yearly" ? "Annual" : "Monthly"}
+                    {subscription.billingCycle === "yearly" ? t("premium.annual") : t("premium.monthly")}
                     {subscription.currentPeriodEnd
                       ? ` · Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
                       : ""}
@@ -384,7 +386,7 @@ export default function PremiumPage() {
                         disabled={buyCoinsMutation.isPending}
                         onClick={() => buyCoinsMutation.mutate(pack.slug)}
                       >
-                        {buyCoinsMutation.isPending ? "Redirecting…" : "Buy with Stripe"}
+                        {buyCoinsMutation.isPending ? t("premium.redirecting") : t("premium.buyStripe")}
                       </Button>
                     </Show>
                     <Show when="signed-out">
@@ -405,7 +407,7 @@ export default function PremiumPage() {
           <Card className="max-w-xl mx-auto border-4 border-foreground shadow-[6px_6px_0_hsl(var(--foreground))]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <HandHeart className="h-5 w-5 text-rose-500" /> Support Habiganize
+                <HandHeart className="h-5 w-5 text-rose-500" /> {t("premium.supportTitle")}
               </CardTitle>
               <CardDescription>
                 One-time donation via Stripe. 100% goes to keeping the pups fed (and the servers
@@ -456,7 +458,7 @@ export default function PremiumPage() {
                   id="donate-msg"
                   rows={3}
                   maxLength={280}
-                  placeholder="Say hi to the pups…"
+                  placeholder={t("premium.messagePlaceholder")}
                   value={donateMessage}
                   onChange={(e) => setDonateMessage(e.target.value)}
                 />
@@ -470,7 +472,7 @@ export default function PremiumPage() {
                   onClick={() => donateMutation.mutate()}
                 >
                   {donateMutation.isPending
-                    ? "Redirecting…"
+                    ? t("premium.redirecting")
                     : `Donate $${(donateAmount / 100).toFixed(2)}`}
                 </Button>
               </Show>
@@ -489,7 +491,7 @@ export default function PremiumPage() {
       <Dialog open={manageOpen} onOpenChange={setManageOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Billing & account</DialogTitle>
+            <DialogTitle>{t("premium.billingAccount")}</DialogTitle>
           </DialogHeader>
           <UserProfile appearance={clerkAppearance} />
         </DialogContent>

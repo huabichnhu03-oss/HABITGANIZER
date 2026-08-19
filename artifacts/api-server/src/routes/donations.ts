@@ -86,7 +86,7 @@ router.post("/donations/checkout", financialRateLimit, async (req, res) => {
             unit_amount: amountCents,
             product_data: {
               name: "Support Habiganize",
-              description: "Thank you for supporting HabitPup development",
+              description: "Thank you for supporting Habiganize",
             },
           },
         },
@@ -115,7 +115,7 @@ router.post("/donations/checkout", financialRateLimit, async (req, res) => {
     res.status(status).json({
       error:
         status === 503
-          ? "Donations are temporarily unavailable (Stripe not configured)"
+          ? "Donations are temporarily unavailable. Please try again later."
           : "Failed to start donation checkout",
     });
   }

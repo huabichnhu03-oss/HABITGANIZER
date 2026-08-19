@@ -76,6 +76,7 @@ export default defineConfig(async ({ mode }) => {
         // Legal pages are served by the API in production; mirror that in dev.
         "/privacy": { target: apiTarget, changeOrigin: true },
         "/support": { target: apiTarget, changeOrigin: true },
+        "/terms": { target: apiTarget, changeOrigin: true },
       },
     },
     preview: {

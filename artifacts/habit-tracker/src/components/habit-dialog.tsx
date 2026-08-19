@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { HABIT_ICONS, DynamicIcon, HABIT_BRUTAL_COLORS, normalizeHex, getReadableForeground } from "@/components/icons";
 import { Pipette } from "lucide-react";
+import { useTranslation } from "@/i18n";
 
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 const HEX_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -28,18 +29,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const DAYS = [
-  { value: "all", label: "Everyday" },
-  { value: "mon", label: "Mon" },
-  { value: "tue", label: "Tue" },
-  { value: "wed", label: "Wed" },
-  { value: "thu", label: "Thu" },
-  { value: "fri", label: "Fri" },
-  { value: "sat", label: "Sat" },
-  { value: "sun", label: "Sun" },
-];
+const DAY_KEYS = [
+  { value: "all", labelKey: "habitDialog.everyday" },
+  { value: "mon", labelKey: "habitDialog.mon" },
+  { value: "tue", labelKey: "habitDialog.tue" },
+  { value: "wed", labelKey: "habitDialog.wed" },
+  { value: "thu", labelKey: "habitDialog.thu" },
+  { value: "fri", labelKey: "habitDialog.fri" },
+  { value: "sat", labelKey: "habitDialog.sat" },
+  { value: "sun", labelKey: "habitDialog.sun" },
+] as const;
 
 export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolean, onOpenChange: (open: boolean) => void, editingHabit?: any }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const createHabit = useCreateHabit();
@@ -109,7 +111,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListHabitsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
-          toast({ title: "Habit updated", description: "Your habit has been saved." });
+          toast({ title: t("habitDialog.updated"), description: t("habitDialog.updatedDesc") });
           onOpenChange(false);
         }
       });
@@ -118,7 +120,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListHabitsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
-          toast({ title: "Habit created", description: "Your new habit is ready." });
+          toast({ title: t("habitDialog.created"), description: t("habitDialog.createdDesc") });
           onOpenChange(false);
         }
       });
@@ -132,7 +134,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-[2rem] p-8 border-brutal shadow-brutal bg-white">
         <DialogHeader>
           <DialogTitle className="text-4xl font-black uppercase tracking-tighter">
-            {editingHabit ? "Edit Habit" : "New Habit"}
+            {editingHabit ? t("habitDialog.titleEdit") : t("habitDialog.titleNew")}
           </DialogTitle>
         </DialogHeader>
 
@@ -143,10 +145,10 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xl font-black uppercase tracking-tight">Habit Name</FormLabel>
+                  <FormLabel className="text-xl font-black uppercase tracking-tight">{t("habitDialog.habitName")}</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="E.G. READ 20 PAGES" 
+                      placeholder={t("habitDialog.namePlaceholder")} 
                       className="h-16 text-xl font-bold rounded-2xl border-brutal shadow-brutal-sm focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-brutal bg-background" 
                       {...field} 
                       data-testid="input-habit-name" 
@@ -165,7 +167,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
                   <FormLabel className="text-xl font-black uppercase tracking-tight">Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Why is this important?" 
+                      placeholder={t("habitDialog.descPlaceholder")} 
                       className="min-h-[100px] text-lg font-bold rounded-2xl border-brutal shadow-brutal-sm resize-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-brutal bg-background" 
                       {...field} 
                       data-testid="input-habit-description" 
@@ -218,7 +220,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
                           })}
                           <label
                             data-testid="swatch-other"
-                            aria-label="Other color"
+                            aria-label={t("habitDialog.otherColor")}
                             onClick={() => setShowHexInput(true)}
                             className={`relative w-12 h-12 rounded-xl transition-all cursor-pointer flex items-center justify-center overflow-hidden ${
                               customActive
@@ -248,7 +250,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
                                 field.onChange((e.target.value || "").toLowerCase());
                               }}
                               data-testid="input-color-picker"
-                              aria-label="Pick custom color"
+                              aria-label={t("habitDialog.pickCustom")}
                               className="absolute inset-0 opacity-0 cursor-pointer"
                             />
                           </label>
@@ -318,7 +320,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
                   <FormLabel className="text-xl font-black uppercase tracking-tight">Frequency</FormLabel>
                   <FormControl>
                     <div className="flex flex-wrap gap-3">
-                      {DAYS.map(day => {
+                      {DAY_KEYS.map(day => {
                         const isSelected = field.value.includes(day.value);
                         const isAll = field.value.includes("all");
                         const isActive = isSelected || (isAll && day.value !== "all");
@@ -343,7 +345,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
                             }}
                             className={`px-5 py-3 rounded-xl text-lg font-black uppercase tracking-wider transition-all border-brutal-sm ${isActive ? 'bg-foreground text-white shadow-brutal-sm' : 'bg-background text-foreground hover:bg-muted'}`}
                           >
-                            {day.label}
+                            {t(day.labelKey)}
                           </button>
                         );
                       })}
@@ -464,7 +466,7 @@ export function HabitDialog({ open, onOpenChange, editingHabit }: { open: boolea
                 disabled={isPending} 
                 data-testid="button-save-habit"
               >
-                {isPending ? "SAVING..." : "SAVE HABIT"}
+                {isPending ? t("habitDialog.saving") : t("habitDialog.saveHabit")}
               </button>
             </DialogFooter>
           </form>

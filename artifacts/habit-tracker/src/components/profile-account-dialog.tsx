@@ -29,7 +29,8 @@ import { useFeedbackDialog } from "@/contexts/feedback-dialog-context";
 import { createClerkAppearance } from "@/lib/clerk-appearance";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { LOCALES, useTranslation, type Locale } from "@/i18n";
+import { useTranslation } from "@/i18n";
+import { LanguageSelect } from "@/components/language-select";
 
 export type TabKey = "manage" | "about" | "account";
 
@@ -86,7 +87,7 @@ export function ProfileAccountDialog({
   const { user } = useUser();
   const { signOut } = useClerk();
   const { openFeedback } = useFeedbackDialog();
-  const { t, locale, setLocale } = useTranslation();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [tab, setTab] = useState<TabKey>(initialTab);
 
@@ -208,27 +209,7 @@ export function ProfileAccountDialog({
                 <p className="font-black uppercase text-sm tracking-wide">{t("language.label")}</p>
                 <p className="text-xs font-medium text-muted-foreground">{t("language.description")}</p>
               </div>
-              <div className="grid grid-cols-2 gap-2" role="group" aria-label={t("language.label")}>
-                {LOCALES.map((item) => {
-                  const active = locale === item.code;
-                  return (
-                    <button
-                      key={item.code}
-                      type="button"
-                      data-testid={`settings-locale-${item.code}`}
-                      onClick={() => setLocale(item.code as Locale)}
-                      className={cn(
-                        "rounded-xl border-2 border-foreground px-3 py-2.5 text-sm font-black uppercase tracking-wide transition-all",
-                        active
-                          ? "bg-primary text-white shadow-[3px_3px_0_#141414]"
-                          : "bg-white hover:bg-muted",
-                      )}
-                    >
-                      {t(`language.${item.labelKey}`)}
-                    </button>
-                  );
-                })}
-              </div>
+              <LanguageSelect id="settings-language-select" showLabel={false} />
             </div>
 
             <div className="space-y-2">

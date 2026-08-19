@@ -2276,7 +2276,7 @@ const styles = StyleSheet.create({
   careTile: {
     width: "48%",
     padding: 8,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 2.5,
     gap: 4,
   },
@@ -2288,7 +2288,7 @@ const styles = StyleSheet.create({
     width: "48%",
     paddingVertical: 12,
     paddingHorizontal: 6,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",

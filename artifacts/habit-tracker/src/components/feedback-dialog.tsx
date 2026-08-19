@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { submitFeedback, type FeedbackSource } from "@/lib/submit-feedback";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 
 const MESSAGE_MAX = 2000;
 
@@ -29,6 +30,7 @@ export function FeedbackDialog({
   source = "settings",
 }: FeedbackDialogProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [rating, setRating] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,16 +53,17 @@ export function FeedbackDialog({
         rating,
         source,
         platform: "web",
+        emptyError: t("feedback.requireMessageOrRating"),
       });
       toast({
-        title: "Thanks for the feedback!",
-        description: "We read every note and use it to improve Habiganize.",
+        title: t("feedback.thanksTitle"),
+        description: t("feedback.thanksDesc"),
       });
       onOpenChange(false);
     } catch (err) {
       toast({
-        title: "Couldn’t send feedback",
-        description: err instanceof Error ? err.message : "Please try again.",
+        title: t("feedback.failTitle"),
+        description: err instanceof Error ? err.message : t("feedback.tryAgain"),
       });
     } finally {
       setBusy(false);
@@ -76,19 +79,20 @@ export function FeedbackDialog({
         <DialogHeader className="text-left gap-2">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
             <MessageSquareHeart className="w-8 h-8 text-primary" strokeWidth={2.5} />
-            Send feedback
+            {t("feedback.title")}
           </DialogTitle>
           <DialogDescription className="text-base font-semibold text-foreground">
-            Tell us what you love, what’s confusing, or what you’d add next.
+            {t("feedback.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="font-black uppercase text-xs tracking-wider">
-              Rating <span className="font-normal text-muted-foreground normal-case">(optional)</span>
+              {t("feedback.rating")}{" "}
+              <span className="font-normal text-muted-foreground normal-case">{t("common.optional")}</span>
             </Label>
-            <div className="flex items-center gap-1.5" role="group" aria-label="Star rating">
+            <div className="flex items-center gap-1.5" role="group" aria-label={t("feedback.starRating")}>
               {[1, 2, 3, 4, 5].map((value) => {
                 const active = rating != null && value <= rating;
                 return (
@@ -96,7 +100,7 @@ export function FeedbackDialog({
                     key={value}
                     type="button"
                     data-testid={`feedback-star-${value}`}
-                    aria-label={`${value} star${value === 1 ? "" : "s"}`}
+                    aria-label={value === 1 ? t("feedback.starOne") : t("feedback.stars", { n: value })}
                     aria-pressed={rating === value}
                     onClick={() => setRating((prev) => (prev === value ? null : value))}
                     className={cn(
@@ -116,7 +120,7 @@ export function FeedbackDialog({
 
           <div className="space-y-2">
             <Label htmlFor="feedback-message" className="font-black uppercase text-xs tracking-wider">
-              Your message
+              {t("feedback.message")}
             </Label>
             <Textarea
               id="feedback-message"
@@ -126,7 +130,7 @@ export function FeedbackDialog({
               rows={5}
               onChange={(e) => setMessage(e.target.value)}
               className="border-2 border-foreground rounded-xl bg-white font-medium resize-none"
-              placeholder="What’s on your mind?"
+              placeholder={t("feedback.placeholder")}
             />
             <p className="text-xs font-medium text-muted-foreground text-right">
               {message.length}/{MESSAGE_MAX}
@@ -142,7 +146,7 @@ export function FeedbackDialog({
             onClick={() => onOpenChange(false)}
             disabled={busy}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
@@ -151,7 +155,7 @@ export function FeedbackDialog({
             className="uppercase font-black border-2 border-foreground rounded-xl shadow-[4px_4px_0_#141414] active:translate-y-px active:shadow-none"
             onClick={() => void handleSubmit()}
           >
-            {busy ? "Sending…" : "Send feedback"}
+            {busy ? t("feedback.sending") : t("feedback.send")}
           </Button>
         </DialogFooter>
       </DialogContent>

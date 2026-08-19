@@ -67,7 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...config,
-    name: config.name ?? "HabitPup",
+    name: config.name ?? "Habiganize",
     slug: config.slug ?? "habitpup",
     plugins,
     extra: {
