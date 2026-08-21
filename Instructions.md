@@ -16,8 +16,16 @@ HabitPup is a **pnpm monorepo** with three shippable products:
 | iOS App | `artifacts/habit-mobile` | React Native + Expo SDK 54 |
 | Android App | `artifacts/habit-mobile` | React Native + Expo SDK 54 |
 
-Shared libraries live in `lib/`. The API server serves the web app's static files
-in production, so they are deployed together.
+Shared libraries live in `lib/`.
+
+**Current production (do not use Vercel):**
+
+| Piece | Host |
+|---|---|
+| Web frontend | [Netlify](https://app.netlify.com/projects/habiganizer) — `https://habitganizer.tech`, GitHub `main` auto-build |
+| API | [Render](https://habiganize-api.onrender.com) — Netlify proxies `/api`, `/privacy`, `/support`, `/terms` here |
+
+If someone says “deploy on Vercel”, correct them: this web app builds on **Netlify**.
 
 ---
 
@@ -194,13 +202,14 @@ All future changes: `git add . && git commit -m "your message" && git push`.
 ## Part 3 — Deploy for FREE (recommended path)
 
 **Goal: $0/month.** Do **not** use Railway for free long-term (trial only, then pay).
-Skip Vercel/Netlify for now — they only host the frontend and still need a free API host.
+The live web app is already on **Netlify**; the API is on **Render**. Do not add Vercel.
 
 | Piece | Free service | Notes |
 |---|---|---|
 | Database | [Neon](https://neon.tech) | Free forever Postgres |
 | Auth | [Clerk](https://clerk.com) | Free tier |
-| API + Web app | [Render](https://render.com) Free Web Service | One URL for both; sleeps after ~15 min idle |
+| Web frontend | [Netlify](https://www.netlify.com) | `habitganizer.tech` — GitHub auto-build |
+| API | [Render](https://render.com) Free Web Service | `habiganize-api.onrender.com`; sleeps after ~15 min idle |
 
 **Tradeoff:** After ~15 minutes with no traffic, Render sleeps. The next visit can take
 ~30–60 seconds to wake up. Fine for personal / demo use; not ideal for a busy product.
@@ -292,7 +301,7 @@ eas secret:create --scope project --name EXPO_PUBLIC_WEB_ORIGIN --value https://
 ### Paid options (skip unless you want always-on without sleep)
 
 - **Railway** (~$5/mo Hobby after trial) — always-on API.
-- Netlify/Vercel alone cannot run this Express API for free.
+- **Netlify** hosts the frontend only. The Express API stays on Render (Vercel is not used).
 
 ---
 

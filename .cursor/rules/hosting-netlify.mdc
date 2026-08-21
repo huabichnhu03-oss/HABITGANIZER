@@ -1,0 +1,16 @@
+---
+description: Web frontend is Netlify (not Vercel); API is Render
+alwaysApply: true
+---
+
+# Hosting — Netlify web, Render API
+
+This project's **web frontend** deploys on **Netlify**, not Vercel.
+
+- Netlify site: `habiganizer`
+- Production URL: `https://habitganizer.tech`
+- GitHub `main` auto-build is on. After `git push` to `main`, Netlify rebuilds. Do not tell the user to sync Vercel.
+
+The **API** is **Render** (`https://habiganize-api.onrender.com`). Netlify proxies `/api`, `/privacy`, `/support`, and `/terms` there.
+
+If the user says "Vercel", "deploy on Vercel", or "sync to Vercel", **correct them immediately**: we build and host the web app on **Netlify**. Do not use Vercel CLI, Vercel MCP deploy tools, or add `vercel.json` unless they explicitly decide to migrate off Netlify.
